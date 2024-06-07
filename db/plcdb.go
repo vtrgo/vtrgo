@@ -31,6 +31,12 @@ func InsertTag(db *sql.DB, name, tagType string) error {
 	return err
 }
 
+func RemoveTag(db *sql.DB, name string) error {
+	query := `DELETE FROM tags WHERE name = ?`
+	_, err := db.Exec(query, name)
+	return err
+}
+
 func FetchTags(db *sql.DB) ([]PlcTag, error) {
 	rows, err := db.Query(`SELECT name, type FROM tags`)
 	if err != nil {

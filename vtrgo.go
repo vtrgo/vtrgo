@@ -9,14 +9,14 @@ import (
 	"sync"
 	"time"
 
+	plcdb "vtrgo/db"
 	"vtrgo/plc"
-	"vtrgo/plcdb"
 	"vtrgo/toexcel"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var db *sql.DB
+var tagdb *sql.DB
 
 var (
 	lastValue int
@@ -58,13 +58,13 @@ func main() {
 	}
 	fmt.Println("Tag value changed to:", myTag.Value)
 
-	db, err = sql.Open("sqlite3", "./plc_tags.db")
+	tagdb, err = sql.Open("sqlite3", "./plc_tags.db")
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer tagdb.Close()
 
-	err = plcdb.InitDB(db)
+	err = plcdb.InitDB(tagdb)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
@@ -119,20 +119,23 @@ func main() {
 			http.Error(write, "Failed to write to Excel", http.StatusInternalServerError)
 		}
 	})
-
-	http.HandleFunc("/add-tag", addTagHandler)
-	http.HandleFunc("/list-tags", listTagsHandler)
-	http.Handle("/", http.FileServer(http.Dir(".")))
-
+	date := time.Now().Format("2006-01-02")
 	triggerTag := "Program:HMI_Executive_Control.DataTrigger"
 	responseTag := "Program:HMI_Executive_Control.TriggerResponse"
-	filePath := "PlcData.xlsx"
+	filePath := fmt.Sprintf("PlcData_%s.xlsx", date)
 	interval := 300 * time.Millisecond
 
-	startTriggerChecker(db, plc, triggerTag, responseTag, filePath, interval)
+	startTriggerChecker(tagdb, plc, triggerTag, responseTag, filePath, interval)
+
+	// Sets up endpoint handlers for each function call
+	http.Handle("/", http.FileServer(http.Dir(".")))
+	http.HandleFunc("/list-tags", listTagsHandler)
+	http.HandleFunc("/add-tag", addTagHandler)
+	http.HandleFunc("/remove-tag", removeTagHandler)
 
 	log.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+
 }
 
 func addTagHandler(w http.ResponseWriter, r *http.Request) {
@@ -144,7 +147,7 @@ func addTagHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err := plcdb.InsertTag(db, tag, tagType)
+		err := plcdb.InsertTag(tagdb, tag, tagType)
 		if err != nil {
 			log.Printf("Failed to insert tag: %v", err)
 			http.Error(w, "Failed to insert tag", http.StatusInternalServerError)
@@ -158,7 +161,7 @@ func addTagHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func listTagsHandler(w http.ResponseWriter, r *http.Request) {
-	tags, err := plcdb.FetchTags(db)
+	tags, err := plcdb.FetchTags(tagdb)
 	if err != nil {
 		log.Printf("Failed to fetch tags: %v", err)
 		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
@@ -172,7 +175,27 @@ func listTagsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "</ul>")
 }
 
-func startTriggerChecker(db *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, filePath string, interval time.Duration) {
+func removeTagHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		tag := r.FormValue("removed-tag")
+		if tag == "" {
+			http.Error(w, "Tag name required", http.StatusBadRequest)
+			return
+		}
+
+		err := plcdb.RemoveTag(tagdb, tag)
+		if err != nil {
+			log.Printf("Failed to remove tag: %v", err)
+			http.Error(w, "Failed to delete tag", http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(w, "Tag '%s' removed successfully!", tag)
+	} else {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	}
+}
+
+func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, filePath string, interval time.Duration) {
 	go func() {
 		for {
 			trigger, err := plc.ReadTagBool(triggerTag)
@@ -185,7 +208,7 @@ func startTriggerChecker(db *sql.DB, plc *plc.PLC, triggerTag string, responseTa
 			if trigger {
 				log.Println("Trigger activated, writing data to Excel")
 
-				tags, err := plcdb.FetchTags(db)
+				tags, err := plcdb.FetchTags(tagdb)
 				if err != nil {
 					log.Printf("Failed to fetch tags: %v", err)
 					time.Sleep(interval)
@@ -204,6 +227,9 @@ func startTriggerChecker(db *sql.DB, plc *plc.PLC, triggerTag string, responseTa
 						tagValue, err = plc.ReadTagFloat32(tag.Name)
 					case "bool":
 						tagValue, err = plc.ReadTagBool(tag.Name)
+					case "string":
+						tagValue, err = plc.ReadTagString(tag.Name)
+
 					default:
 						log.Printf("Unknown tag type %s for tag %s", tag.Type, tag.Name)
 						continue

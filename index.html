@@ -8,6 +8,7 @@
 </head>
 <body>
     <h1>PLC Metrics</h1>
+    <h2>First Test</h2>
     <div id="metrics" hx-get="/metrics" hx-trigger="load, every 1s" hx-swap="innerHTML">
         <p>Tag Value: <span id="tagValue">Loading...</span></p>
     </div>
@@ -26,8 +27,21 @@
         <button type="submit">Add Tag</button>
     </form>
     <div id="response"></div>
+    <h2>Remove a Tag</h2>
+    <form id="remove-tag-form" hx-post="/remove-tag" hx-target="#response" hx-swap="innerHTML">
+        <label for="removetag">Tag Name:</label>
+        <input type="text" id="removed-tag" name="removed-tag" required>
+        <button type="submit">Remove Tag</button>
+    </form>
+    <div id="response"></div>
+
     <h2>List Tags</h2>
     <button hx-get="/list-tags" hx-target="#tag-list" hx-swap="innerHTML">List Tags</button>
     <div id="tag-list"></div>
+
 </body>
 </html>
+
+
+
+
