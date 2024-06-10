@@ -3,7 +3,7 @@
 #
 # Binaries for programs and plugins
 *.exe
-*.xlxs
+*.xlsx
 *.db
 
 # Test binary, built with `go test -c`

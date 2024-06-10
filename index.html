@@ -9,7 +9,7 @@
 <body>
     <h1>PLC Metrics</h1>
     <h2>First Test</h2>
-    <div id="metrics" hx-get="/metrics" hx-trigger="load, every 1s" hx-swap="innerHTML">
+    <div id="metrics" hx-get="/metrics" hx-trigger="load" hx-swap="innerHTML">
         <p>Tag Value: <span id="tagValue">Loading...</span></p>
     </div>
     <button hx-post="/update" hx-trigger="click" hx-target="#metrics" hx-swap="innerHTML">Add 1</button>
