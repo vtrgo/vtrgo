@@ -5,6 +5,7 @@
 *.exe
 *.xlsx
 *.db
+*db.sqlite3*
 
 # Test binary, built with `go test -c`
 *.test
