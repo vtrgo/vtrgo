@@ -1,4 +1,4 @@
-package toexcel
+package excel
 
 import (
 	"fmt"

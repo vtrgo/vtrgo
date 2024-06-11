@@ -8,8 +8,8 @@ import (
 	"time"
 
 	plcdb "vtrgo/db"
+	"vtrgo/excel"
 	"vtrgo/plc"
-	"vtrgo/toexcel"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -18,8 +18,10 @@ var tagdb *sql.DB
 
 func main() {
 
+	// Test a command line introduction to the user
 	welcome("Justin")
 
+	// Declare a PLC tag as a test integer variable
 	myTag := plcdb.PlcTag{
 		Name:  "Program:HMI_Executive_Control.TestDint",
 		Type:  "int32",
@@ -71,6 +73,7 @@ func main() {
 		write.Write([]byte(htmlResponse))
 	})
 
+	// Reads and writes an integer value to a connected PLC and stores the new value in excel
 	http.HandleFunc("/update", func(write http.ResponseWriter, read *http.Request) {
 		myTag.Value = myTag.Value.(int32) + 1
 		plc.WriteTagInt32(myTag.Name, myTag.Value.(int32))
@@ -80,13 +83,13 @@ func main() {
 		write.Header().Set("Content-Type", "text/html")
 		write.Write([]byte(htmlResponse))
 
-		plcData := toexcel.PlcTags{
-			Tags: []toexcel.Tag{
+		plcData := excel.PlcTags{
+			Tags: []excel.Tag{
 				{Name: myTag.Name, Value: myTag.Value.(int32)},
 			},
 		}
 
-		err = toexcel.WriteDataToExcel(plcData, "plc_data.xlsx")
+		err = excel.WriteDataToExcel(plcData, "plc_data.xlsx")
 		if err != nil {
 			log.Printf("Failed to write to Excel: %v", err)
 			http.Error(write, "Failed to write to Excel", http.StatusInternalServerError)
@@ -182,13 +185,14 @@ func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 
 			if trigger {
 				date := time.Now().Format("2006-01-02")
+				customerName := "Halkey"
 				recipeTag := "HMI_Recipe[0].RecipeName"
 				recipeName, err := plc.ReadTagString(recipeTag)
 				if err != nil {
 					log.Printf("Error reading tag: %v", err)
 					return
 				}
-				filePath := fmt.Sprintf("%s_Data_%s.xlsx", recipeName, date)
+				filePath := fmt.Sprintf("%s_%s_Data_%s.xlsx", customerName, recipeName, date)
 
 				log.Println("Trigger activated, writing data to Excel")
 
@@ -199,7 +203,7 @@ func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 					continue
 				}
 
-				var plcTags []toexcel.Tag
+				var plcTags []excel.Tag
 				for _, tag := range tags {
 					var tagValue interface{}
 					var err error
@@ -224,12 +228,12 @@ func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 						continue
 					}
 
-					plcTags = append(plcTags, toexcel.Tag{Name: tag.Name, Value: tagValue})
+					plcTags = append(plcTags, excel.Tag{Name: tag.Name, Value: tagValue})
 				}
 
 				if len(plcTags) > 0 {
-					plcData := toexcel.PlcTags{Tags: plcTags}
-					err = toexcel.WriteDataToExcel(plcData, filePath)
+					plcData := excel.PlcTags{Tags: plcTags}
+					err = excel.WriteDataToExcel(plcData, filePath)
 					if err != nil {
 						log.Printf("Failed to write to Excel: %v", err)
 					}
