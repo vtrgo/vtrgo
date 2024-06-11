@@ -2,11 +2,9 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 	"time"
 
 	plcdb "vtrgo/db"
@@ -18,12 +16,9 @@ import (
 
 var tagdb *sql.DB
 
-var (
-	lastValue int
-	mu        sync.Mutex
-)
-
 func main() {
+
+	welcome("Justin")
 
 	myTag := plcdb.PlcTag{
 		Name:  "Program:HMI_Executive_Control.TestDint",
@@ -70,42 +65,20 @@ func main() {
 	}
 
 	http.HandleFunc("/metrics", func(write http.ResponseWriter, read *http.Request) {
-		jsonResponse, err := json.Marshal(myTag)
-		if err != nil {
-			http.Error(write, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		write.Header().Set("Content-Type", "application/json")
-		write.Write(jsonResponse)
-
-		mu.Lock()
-		defer mu.Unlock()
-
-		if myTag.Value != int32(lastValue) {
-			lastValue = int(myTag.Value.(int32))
-			jsonResponse, err := json.Marshal(myTag)
-			if err != nil {
-				http.Error(write, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			write.Header().Set("Content-Type", "application/json")
-			write.Write(jsonResponse)
-		}
+		myTag.Value, err = plc.ReadTagInt32(myTag.Name)
+		htmlResponse := fmt.Sprintf("<p>Tag Value: <span id=\"tagValue\">%d</span></p>", myTag.Value)
+		write.Header().Set("Content-Type", "text/html")
+		write.Write([]byte(htmlResponse))
 	})
 
 	http.HandleFunc("/update", func(write http.ResponseWriter, read *http.Request) {
 		myTag.Value = myTag.Value.(int32) + 1
 		plc.WriteTagInt32(myTag.Name, myTag.Value.(int32))
-		log.Printf("Tag value updated to: %v", myTag.Value)
+		log.Printf("Tag value updated: %v", myTag.Value)
 
-		jsonResponse, err := json.Marshal(myTag)
-		if err != nil {
-			http.Error(write, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		write.Header().Set("Content-Type", "application/json")
-		write.Write(jsonResponse)
+		htmlResponse := fmt.Sprintf("<p>Tag Value: <span id=\"tagValue\">%d</span></p>", myTag.Value)
+		write.Header().Set("Content-Type", "text/html")
+		write.Write([]byte(htmlResponse))
 
 		plcData := toexcel.PlcTags{
 			Tags: []toexcel.Tag{
@@ -119,19 +92,13 @@ func main() {
 			http.Error(write, "Failed to write to Excel", http.StatusInternalServerError)
 		}
 	})
-	date := time.Now().Format("2006-01-02")
+
 	triggerTag := "Program:HMI_Executive_Control.DataTrigger"
 	responseTag := "Program:HMI_Executive_Control.TriggerResponse"
 
-	recipeName, err := plc.ReadTagString("HMI_Recipe[0].RecipeName")
-	if err != nil {
-		log.Printf("Error reading tag: %v", err)
-		return
-	}
-	filePath := fmt.Sprintf("%s_Data_%s.xlsx", recipeName, date)
 	interval := 300 * time.Millisecond
 
-	startTriggerChecker(tagdb, plc, triggerTag, responseTag, filePath, interval)
+	startTriggerChecker(tagdb, plc, triggerTag, responseTag, interval)
 
 	// Sets up endpoint handlers for each function call
 	http.Handle("/", http.FileServer(http.Dir(".")))
@@ -201,8 +168,10 @@ func removeTagHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, filePath string, interval time.Duration) {
+func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, interval time.Duration) {
+
 	go func() {
+
 		for {
 			trigger, err := plc.ReadTagBool(triggerTag)
 			if err != nil {
@@ -212,6 +181,15 @@ func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 			}
 
 			if trigger {
+				date := time.Now().Format("2006-01-02")
+				recipeTag := "HMI_Recipe[0].RecipeName"
+				recipeName, err := plc.ReadTagString(recipeTag)
+				if err != nil {
+					log.Printf("Error reading tag: %v", err)
+					return
+				}
+				filePath := fmt.Sprintf("%s_Data_%s.xlsx", recipeName, date)
+
 				log.Println("Trigger activated, writing data to Excel")
 
 				tags, err := plcdb.FetchTags(tagdb)
