@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"vtrgo/create"
 	plcdb "vtrgo/db"
 	"vtrgo/excel"
 	"vtrgo/plc"
@@ -27,10 +28,10 @@ func main() {
 		Type:  "int32",
 		Value: 0}
 
-	// Create a new PLC
+	// Create a new PLC identity using the IP address of the Logix controller
 	plc := plc.NewPLC("10.103.115.10")
 
-	// Connect to the PLC
+	// Make a connection to the PLC
 	err := plc.Connect()
 	if err != nil {
 		log.Printf("Error connecting to PLC: %v", err)
@@ -38,7 +39,7 @@ func main() {
 	}
 	defer plc.Disconnect()
 
-	// Read a value from the PLC
+	// Test read an integer value from the PLC
 	myTag.Value, err = plc.ReadTagInt32(myTag.Name)
 	if err != nil {
 		log.Printf("Error reading tag: %v", err)
@@ -46,7 +47,7 @@ func main() {
 	}
 	fmt.Printf("Tag was value: %d\n", myTag.Value)
 
-	// Write a value to the PLC
+	// Write an integer test value to the PLC
 	myTag.Value = myTag.Value.(int32) + 1
 	err = plc.WriteTagInt32(myTag.Name, myTag.Value.(int32))
 	if err != nil {
@@ -55,31 +56,34 @@ func main() {
 	}
 	fmt.Println("Tag value changed to:", myTag.Value)
 
+	// Create a connection to the plc_tags database
 	tagdb, err = sql.Open("sqlite3", "./plc_tags.db")
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
 	defer tagdb.Close()
 
+	// Initialize and create the database if it does not already exist
 	err = plcdb.InitDB(tagdb)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
+	// Creates the /metrics endpoint to display and update tag values in the browser
 	http.HandleFunc("/metrics", func(write http.ResponseWriter, read *http.Request) {
 		myTag.Value, err = plc.ReadTagInt32(myTag.Name)
-		htmlResponse := fmt.Sprintf("<p>Tag Value: <span id=\"tagValue\">%d</span></p>", myTag.Value)
+		htmlResponse := fmt.Sprintf("<p>%s: <span id=\"tagValue\">%d</span></p>", myTag.Name, myTag.Value)
 		write.Header().Set("Content-Type", "text/html")
 		write.Write([]byte(htmlResponse))
 	})
 
-	// Reads and writes an integer value to a connected PLC and stores the new value in excel
+	// Creates the /update endpoint to increment the test integer value and store the new value in excel
 	http.HandleFunc("/update", func(write http.ResponseWriter, read *http.Request) {
 		myTag.Value = myTag.Value.(int32) + 1
 		plc.WriteTagInt32(myTag.Name, myTag.Value.(int32))
 		log.Printf("Tag value updated: %v", myTag.Value)
 
-		htmlResponse := fmt.Sprintf("<p>Tag Value: <span id=\"tagValue\">%d</span></p>", myTag.Value)
+		htmlResponse := fmt.Sprintf("<p>%s: <span id=\"tagValue\">%d</span></p>", myTag.Name, myTag.Value)
 		write.Header().Set("Content-Type", "text/html")
 		write.Write([]byte(htmlResponse))
 
@@ -99,21 +103,33 @@ func main() {
 	triggerTag := "Program:HMI_Executive_Control.DataTrigger"
 	responseTag := "Program:HMI_Executive_Control.TriggerResponse"
 
-	interval := 300 * time.Millisecond
+	interval := 3 * time.Millisecond
 
-	startTriggerChecker(tagdb, plc, triggerTag, responseTag, interval)
+	date := time.Now().Format("2006-01-02")
+	customerName := "Halkey"
+	recipeTag := "HMI_Recipe[0].RecipeName"
+	recipeName, err := plc.ReadTagString(recipeTag)
+	if err != nil {
+		log.Printf("Error reading tag: %v", err)
+		return
+	}
+	filePath := fmt.Sprintf("%s_%s-Data_%s.xlsx", customerName, recipeName, date)
+
+	startTriggerChecker(tagdb, plc, triggerTag, responseTag, filePath, interval)
 
 	// Sets up endpoint handlers for each function call
 	http.Handle("/", http.FileServer(http.Dir(".")))
-	http.HandleFunc("/list-tags", listTagsHandler)
 	http.HandleFunc("/add-tag", addTagHandler)
 	http.HandleFunc("/remove-tag", removeTagHandler)
+	http.HandleFunc("/list-tags", listTagsHandler)
 
 	log.Println("Server started at :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// log.Fatal(http.ListenAndServe(":8080", nil))
 
+	create.L5XCreate()
 }
 
+// Handles the /add-tag endpoint for adding new tags to the plc_tags database
 func addTagHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		tag := r.FormValue("tag")
@@ -136,21 +152,7 @@ func addTagHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func listTagsHandler(w http.ResponseWriter, r *http.Request) {
-	tags, err := plcdb.FetchTags(tagdb)
-	if err != nil {
-		log.Printf("Failed to fetch tags: %v", err)
-		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "<ul>")
-	for _, tag := range tags {
-		fmt.Fprintf(w, "<li>%s (%s)</li>", tag.Name, tag.Type)
-	}
-	fmt.Fprintf(w, "</ul>")
-}
-
+// Handles the /remove-tag endpoint for deleting tags from the plc_tags database
 func removeTagHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		tag := r.FormValue("removed-tag")
@@ -171,7 +173,25 @@ func removeTagHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, interval time.Duration) {
+// Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
+func listTagsHandler(w http.ResponseWriter, r *http.Request) {
+	tags, err := plcdb.FetchTags(tagdb)
+	if err != nil {
+		log.Printf("Failed to fetch tags: %v", err)
+		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "<ul>")
+	for _, tag := range tags {
+		fmt.Fprintf(w, "<li>%s (%s)</li>", tag.Name, tag.Type)
+	}
+	fmt.Fprintf(w, "</ul>")
+}
+
+// Goroutine to monitor a boolean trigger tag in the PLC.
+// When triggerTag is activated (True state), reads all tag values in the plc_tags database and stores them in excel
+func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, filePath string, interval time.Duration) {
 
 	go func() {
 
@@ -184,16 +204,6 @@ func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 			}
 
 			if trigger {
-				date := time.Now().Format("2006-01-02")
-				customerName := "Halkey"
-				recipeTag := "HMI_Recipe[0].RecipeName"
-				recipeName, err := plc.ReadTagString(recipeTag)
-				if err != nil {
-					log.Printf("Error reading tag: %v", err)
-					return
-				}
-				filePath := fmt.Sprintf("%s_%s_Data_%s.xlsx", customerName, recipeName, date)
-
 				log.Println("Trigger activated, writing data to Excel")
 
 				tags, err := plcdb.FetchTags(tagdb)

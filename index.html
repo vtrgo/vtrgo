@@ -11,7 +11,7 @@
     <h2>First Test</h2>
 
     <div id="metrics" hx-get="/metrics" hx-trigger="load, every 1s" hx-swap="innerHTML">
-        <p>Tag Value: <span id="tagValue">Loading...</span></p>
+        <p><span id="tagValue">Loading tag values ...</span></p>
     </div>
     <button hx-post="/update" hx-trigger="click" hx-target="#metrics" hx-swap="innerHTML">Add 1</button>
 

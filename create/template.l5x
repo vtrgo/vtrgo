@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RSLogix5000Content SchemaRevision="1.0" SoftwareRevision="35.00" TargetName="{{.TargetName}}" TargetType="Controller" ContainsContext="false" ExportDate="{{.ExportDate}}" ExportOptions="NoRawData L5KData DecoratedData ForceProtectedEncoding AllProjDocTrans">
+  <Controller Use="Target" Name="{{.ControllerName}}" ProcessorType="{{.ProcessorType}}" MajorRev="{{.MajorRev}}" MinorRev="{{.MinorRev}}" TimeSlice="{{.TimeSlice}}" ShareUnusedTimeSlice="{{.ShareUnusedTimeSlice}}" ProjectCreationDate="{{.ProjectCreationDate}}" LastModifiedDate="{{.LastModifiedDate}}" SFCExecutionControl="CurrentActive" SFCRestartPosition="MostRecent" SFCLastScan="DontScan" ProjectSN="{{.ProjectSN}}" MatchProjectToController="false" CanUseRPIFromProducer="false" InhibitAutomaticFirmwareUpdate="0" PassThroughConfiguration="EnabledWithAppend" DownloadProjectDocumentationAndExtendedProperties="true" DownloadProjectCustomProperties="true" ReportMinorOverflow="false">
+    <RedundancyInfo Enabled="false" KeepTestEditsOnSwitchOver="false" IOMemoryPadPercentage="90" DataTablePadPercentage="50"/>
+    <Security Code="0" ChangesToDetect="16#ffff_ffff_ffff_ffff"/>
+    <SafetyInfo/>
+    <DataTypes/>
+    <Modules>
+      <Module Name="Local" CatalogNumber="{{.CatalogNumber}}" Vendor="1" ProductType="14" ProductCode="107" Major="35" Minor="11" ParentModule="Local" ParentModPortId="1" Inhibited="false" MajorFault="true">
+        <EKey State="Disabled"/>
+        <Ports>
+          <Port Id="1" Address="0" Type="Compact" Upstream="false">
+            <Bus Size="17"/>
+          </Port>
+          <Port Id="2" Type="Ethernet" Upstream="false">
+            <Bus/>
+          </Port>
+        </Ports>
+      </Module>
+    </Modules>
+    <AddOnInstructionDefinitions/>
+    <Tags>
+      {{range .Tags}}
+      <Tag Name="{{.Name}}" TagType="{{.TagType}}" DataType="{{.DataType}}" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+        <Description><![CDATA[{{.Description}}]]></Description>
+        <Data Format="L5K"><![CDATA[{{.L5KData}}]]></Data>
+        <Data Format="Decorated">
+          <DataValue DataType="{{.DataType}}" Radix="Decimal" Value="{{.Value}}"/>
+        </Data>
+      </Tag>
+      {{end}}
+    </Tags>
+  </Controller>
+</RSLogix5000Content>
