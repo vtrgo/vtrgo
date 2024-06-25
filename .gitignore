@@ -20,6 +20,8 @@
 go.work
 go.sum
 
-
 # env file
 .env
+
+# L5X Files
+*.L5X
