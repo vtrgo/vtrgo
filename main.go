@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,6 +16,10 @@ import (
 )
 
 var tagdb *sql.DB
+
+type MetricsData struct {
+	Value int32 `json:"value"`
+}
 
 func main() {
 
@@ -99,10 +104,27 @@ func main() {
 		}
 	})
 
+	// Creates the /update endpoint to increment the test integer value and store the new value in excel
+	http.HandleFunc("/metrics/latest", func(write http.ResponseWriter, read *http.Request) {
+		// Prepare the response data
+
+		// Convert the response data to JSON
+		metricsData := MetricsData{myTag.Value.(int32)}
+		jsonResponse, err := json.Marshal(metricsData)
+		if err != nil {
+			http.Error(write, "Failed to encode JSON response", http.StatusInternalServerError)
+			return
+		}
+
+		// Set the response headers and write the response
+		write.Header().Set("Content-Type", "application/json")
+		write.Write(jsonResponse)
+	})
+
 	triggerTag := "Program:HMI_Executive_Control.DataTrigger"
 	responseTag := "Program:HMI_Executive_Control.TriggerResponse"
 
-	interval := 3 * time.Millisecond
+	interval := 300 * time.Millisecond
 
 	date := time.Now().Format("2006-01-02")
 	customerName := "Halkey"
@@ -120,12 +142,13 @@ func main() {
 	http.HandleFunc("/add-tag", addTagHandler)
 	http.HandleFunc("/remove-tag", removeTagHandler)
 	http.HandleFunc("/list-tags", listTagsHandler)
-	http.HandleFunc("/load-list", loadListHandler)
-	http.HandleFunc("/load-add", loadAddHandler)
-	http.HandleFunc("/load-remove", loadRemoveHandler)
+	http.HandleFunc("/load-list-tags", loadListTagsHandler)
+	http.HandleFunc("/load-add-tags", loadAddTagsHandler)
+	http.HandleFunc("/load-remove-tags", loadRemoveTagsHandler)
+	http.HandleFunc("js/metricsChart.js", metricsChartHandler)
 
 	fs := http.FileServer(http.Dir("."))
-	http.Handle("resource/styles.css", fs)
+	http.Handle("/resource/styles.css", fs)
 	// http.Handle("/list-tags.html", fs)
 	// http.Handle("/add-tags.html", fs)
 	// http.Handle("/remove-tags.html", fs)
@@ -138,15 +161,19 @@ func main() {
 	// create.L5XCreate()
 }
 
-func loadListHandler(w http.ResponseWriter, r *http.Request) {
+func metricsChartHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "resource/metricsChart.js")
+}
+
+func loadListTagsHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "list-tags.html")
 }
 
-func loadAddHandler(w http.ResponseWriter, r *http.Request) {
+func loadAddTagsHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "add-tags.html")
 }
 
-func loadRemoveHandler(w http.ResponseWriter, r *http.Request) {
+func loadRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "remove-tags.html")
 }
 
