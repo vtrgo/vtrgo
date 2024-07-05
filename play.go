@@ -4,12 +4,10 @@ import (
 	"log"
 )
 
-func welcome(s string) string {
-
-	st := s
-	if st != "" {
-		log.Printf("Hello, %s", st)
-		return st
+func welcome(name string) string {
+	if name != "" {
+		log.Printf("Hello, %s", name)
+		return name
 	}
 	log.Printf("No text")
 	return "Nothing"

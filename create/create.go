@@ -28,7 +28,7 @@ type L5XData struct {
 	LastModifiedDate     string
 	ProjectSN            string
 	CatalogNumber        string
-	Tags                 []PLCTag
+	ControllerTags       []PLCTag
 }
 
 func L5XCreate() {
@@ -50,9 +50,10 @@ func L5XCreate() {
 		LastModifiedDate:     time.Now().Format(time.RFC1123),
 		ProjectSN:            "16#0000_0000",
 		CatalogNumber:        "1769-L33ER",
-		Tags: []PLCTag{
-			{Name: "MotorOn", TagType: "Base", DataType: "BOOL", Description: "Motor Is Running Bit", L5KData: "0", Value: "0"},
-			{Name: "MotorSpeed", TagType: "Base", DataType: "DINT", Description: "Motor Speed", L5KData: "0", Value: "0"},
+		ControllerTags: []PLCTag{
+			{Name: "StartPB", TagType: "Base", DataType: "BOOL", Description: "Start Pushbutton", L5KData: "0", Value: "0"},
+			{Name: "MotorON", TagType: "Base", DataType: "BOOL", Description: "Motor Is Running", L5KData: "0", Value: "0"},
+			{Name: "MotorSPEED", TagType: "Base", DataType: "DINT", Description: "Motor Speed", L5KData: "0", Value: "0"},
 		},
 	}
 

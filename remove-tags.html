@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTRGo: Tags</title>
+</head>
+<body>
+    <h2>Remove a Tag</h2>
+    <form id="remove-tag-form" hx-post="/remove-tag" hx-target="#response" hx-swap="innerHTML">
+        <label for="removetag">Tag Name:</label>
+        <input type="text" id="removed-tag" name="removed-tag" required>
+        <button type="submit">Remove Tag</button>
+    </form>
+    <div id="response"></div>
+</body>
+</html>

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"vtrgo/create"
 	plcdb "vtrgo/db"
 	"vtrgo/excel"
 	"vtrgo/plc"
@@ -118,15 +117,37 @@ func main() {
 	startTriggerChecker(tagdb, plc, triggerTag, responseTag, filePath, interval)
 
 	// Sets up endpoint handlers for each function call
-	http.Handle("/", http.FileServer(http.Dir(".")))
 	http.HandleFunc("/add-tag", addTagHandler)
 	http.HandleFunc("/remove-tag", removeTagHandler)
 	http.HandleFunc("/list-tags", listTagsHandler)
+	http.HandleFunc("/load-list", loadListHandler)
+	http.HandleFunc("/load-add", loadAddHandler)
+	http.HandleFunc("/load-remove", loadRemoveHandler)
+
+	fs := http.FileServer(http.Dir("."))
+	http.Handle("resource/styles.css", fs)
+	// http.Handle("/list-tags.html", fs)
+	// http.Handle("/add-tags.html", fs)
+	// http.Handle("/remove-tags.html", fs)
+
+	http.Handle("/", fs)
 
 	log.Println("Server started at :8080")
-	// log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 
-	create.L5XCreate()
+	// create.L5XCreate()
+}
+
+func loadListHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "list-tags.html")
+}
+
+func loadAddHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "add-tags.html")
+}
+
+func loadRemoveHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "remove-tags.html")
 }
 
 // Handles the /add-tag endpoint for adding new tags to the plc_tags database

@@ -19,16 +19,14 @@
       </Module>
     </Modules>
     <AddOnInstructionDefinitions/>
-    <Tags>
-      {{range .Tags}}
+    <Tags>{{range .ControllerTags}}
       <Tag Name="{{.Name}}" TagType="{{.TagType}}" DataType="{{.DataType}}" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
         <Description><![CDATA[{{.Description}}]]></Description>
         <Data Format="L5K"><![CDATA[{{.L5KData}}]]></Data>
         <Data Format="Decorated">
           <DataValue DataType="{{.DataType}}" Radix="Decimal" Value="{{.Value}}"/>
         </Data>
-      </Tag>
-      {{end}}
+      </Tag>{{end}}
     </Tags>
   </Controller>
 </RSLogix5000Content>
