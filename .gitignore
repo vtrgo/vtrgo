@@ -17,8 +17,8 @@
 /resource/
 
 # Go workspace file
-go.work
-go.sum
+*.work
+*.sum
 
 # env file
 .env
