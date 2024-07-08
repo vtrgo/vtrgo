@@ -142,9 +142,11 @@ func main() {
 	http.HandleFunc("/add-tag", addTagHandler)
 	http.HandleFunc("/remove-tag", removeTagHandler)
 	http.HandleFunc("/list-tags", listTagsHandler)
+	http.HandleFunc("/list-remove-tags", listRemoveTagsHandler)
 	http.HandleFunc("/load-list-tags", loadListTagsHandler)
 	http.HandleFunc("/load-add-tags", loadAddTagsHandler)
 	http.HandleFunc("/load-remove-tags", loadRemoveTagsHandler)
+	http.HandleFunc("/load-list-remove-tags", loadListRemoveTagsHandler)
 	http.HandleFunc("js/metricsChart.js", metricsChartHandler)
 
 	fs := http.FileServer(http.Dir("."))
@@ -175,6 +177,10 @@ func loadAddTagsHandler(w http.ResponseWriter, r *http.Request) {
 
 func loadRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "remove-tags.html")
+}
+
+func loadListRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "list-remove-tags.html")
 }
 
 // Handles the /add-tag endpoint for adding new tags to the plc_tags database
@@ -232,7 +238,28 @@ func listTagsHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(w, "<ul>")
 	for _, tag := range tags {
-		fmt.Fprintf(w, "<li>%s (%s)</li>", tag.Name, tag.Type)
+		fmt.Fprintf(w, "<li>%s ((%s))</li>", tag.Name, tag.Type)
+	}
+	fmt.Fprintf(w, "</ul>")
+}
+
+// Handles the /list-remove-tags endpoint for displaying all the tags in the database with a delete buttin next to each tag
+func listRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
+	tags, err := plcdb.FetchTags(tagdb)
+	if err != nil {
+		log.Printf("Failed to fetch tags: %v", err)
+		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "<ul>")
+	for _, tag := range tags {
+		fmt.Fprintf(w, `
+		<li>
+		%s (%s)
+		<button hx-delete="/remove-tag?name=%s" hx-swap="innerHTML">Delete</button>
+		</li>
+		`, tag.Name, tag.Type, tag.Name)
 	}
 	fmt.Fprintf(w, "</ul>")
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VTRGo</title>
+    <title>VTR>>Go</title>
     <link rel="stylesheet" href="resource/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="resource/metricsChart.js"></script>
@@ -17,14 +17,15 @@
             <button hx-get="/load-list-tags" hx-target="#iframe-content" hx-swap="innerHTML">List Tags</button>
             <button hx-get="/load-add-tags" hx-target="#iframe-content" hx-swap="innerHTML">Add Tags</button>
             <button hx-get="/load-remove-tags" hx-target="#iframe-content" hx-swap="innerHTML">Remove Tags</button>
+            <button hx-get="/load-list-remove-tags" hx-target="#iframe-content" hx-swap="innerHTML">List & Remove Tags</button>
 
         </div>
         <!-- Main Content Area -->
         <div class="main-content">
             <!-- Metrics Data Section -->
-            
+            <h2>Dashboard</h2>          
             <div id="metrics-section" class="metrics-section" hx-get="/metrics" hx-trigger="load, every 1s">
-                <h2>Metrics Data</h2>
+
                 <div id="metrics-data">
                     <!-- Metrics data will be dynamically loaded here -->
                 </div>

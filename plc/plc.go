@@ -61,14 +61,14 @@ func (plc *PLC) WriteTagBool(tagName string, value bool) error {
 	return plc.client.Write(tagName, value)
 }
 
-// ReadTagBool reads a boolean value from the specified tag.
+// ReadTagString reads a boolean value from the specified tag.
 func (plc *PLC) ReadTagString(tagName string) (string, error) {
 	var tagValue string
 	err := plc.client.Read(tagName, &tagValue)
 	return tagValue, err
 }
 
-// WriteTagBool writes a boolean value to the specified tag.
+// WriteTagString writes a boolean value to the specified tag.
 func (plc *PLC) WriteTagString(tagName string, value string) error {
 	return plc.client.Write(tagName, value)
 }
