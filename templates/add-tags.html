@@ -18,30 +18,10 @@
             <option value="real">REAL</option>
             <option value="[]dint">DINT ARRAY</option>
         </select>
-        <div id="length-field" style="display:none;">
-            <label for="length">Length (if array):</label>
-            <input type="number" id="length" name="length">
-        </div>
-        
-        <button type="submit">Add Tag</button>
-    </form>
-    
-    <script>
-        function toggleLengthField() {
-            var typeSelect = document.getElementById('type');
-            var lengthField = document.getElementById('length-field');
-            
-            if (typeSelect.value === '[]dint') {
-                lengthField.style.display = 'block';
-            } else {
-                lengthField.style.display = 'none';
-            }
-        }
-    </script>
-        <!-- <label for="length">Length (if array):</label>
+        <label for="length">Length (if array):</label>
         <input type="number" id="length" name="length">
         <button type="submit">Add Tag</button>
-    </form> -->
+    </form>
     <div id="response"></div>
 </body>
 </html>

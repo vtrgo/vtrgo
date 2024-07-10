@@ -71,7 +71,16 @@ func main() {
 		log.Printf("Error reading tag: %v", err)
 		return
 	}
-	fmt.Printf("Tag was value: %f\n", myDintArray.Value)
+	fmt.Printf("Tag: %v has value: %f\n", myDintArray.Name, myDintArray.Value)
+
+	// Type assert the interface{} to []float64
+	if values, ok := myDintArray.Value.([]float32); ok {
+		for i, v := range values {
+			fmt.Printf("Tag: %s[%d] has value: %f\n", myDintArray.Name, i, v)
+		}
+	} else {
+		fmt.Println("Error: Value is not of correct type")
+	}
 
 	// Create a connection to the plc_tags database
 	tagdb, err = sql.Open("sqlite3", "./plc_tags.db")
@@ -162,18 +171,18 @@ func main() {
 	http.HandleFunc("/load-list-remove-tags", loadListRemoveTagsHandler)
 	http.HandleFunc("js/metricsChart.js", metricsChartHandler)
 
-	fs := http.FileServer(http.Dir("."))
+	// fs := http.FileServer(http.Dir("."))
 	// http.Handle("/resource/styles.css", fs)
 	// http.Handle("/list-tags.html", fs)
 	// http.Handle("/add-tags.html", fs)
 	// http.Handle("/remove-tags.html", fs)
 
-	http.Handle("/", fs)
+	http.Handle("/", http.FileServer(http.Dir(".")))
 
 	log.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
-
 	// create.L5XCreate()
+
 }
 
 func metricsChartHandler(w http.ResponseWriter, r *http.Request) {
@@ -181,19 +190,19 @@ func metricsChartHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loadListTagsHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "list-tags.html")
+	http.ServeFile(w, r, "templates/list-tags.html")
 }
 
 func loadAddTagsHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "add-tags.html")
+	http.ServeFile(w, r, "templates/add-tags.html")
 }
 
 func loadRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "remove-tags.html")
+	http.ServeFile(w, r, "templates/remove-tags.html")
 }
 
 func loadListRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "list-remove-tags.html")
+	http.ServeFile(w, r, "templates/list-remove-tags.html")
 }
 
 // Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
