@@ -119,7 +119,7 @@ func main() {
 			},
 		}
 
-		err = excel.WriteDataToExcel(plcData, "plc_data.xlsx")
+		err = excel.WriteDataToExcel(plcData, "output_files/plc_data.xlsx")
 		if err != nil {
 			log.Printf("Failed to write to Excel: %v", err)
 			http.Error(write, "Failed to write to Excel", http.StatusInternalServerError)
@@ -156,7 +156,7 @@ func main() {
 		log.Printf("Error reading tag: %v", err)
 		return
 	}
-	filePath := fmt.Sprintf("%s_%s-Data_%s.xlsx", customerName, recipeName, date)
+	filePath := fmt.Sprintf("output_files/%s_%s-Data_%s.xlsx", customerName, recipeName, date)
 
 	startTriggerChecker(tagdb, plc, triggerTag, responseTag, filePath, interval)
 
@@ -171,12 +171,6 @@ func main() {
 	http.HandleFunc("/load-list-remove-tags", loadListRemoveTagsHandler)
 	http.HandleFunc("js/metricsChart.js", metricsChartHandler)
 
-	// fs := http.FileServer(http.Dir("."))
-	// http.Handle("/resource/styles.css", fs)
-	// http.Handle("/list-tags.html", fs)
-	// http.Handle("/add-tags.html", fs)
-	// http.Handle("/remove-tags.html", fs)
-
 	http.Handle("/", http.FileServer(http.Dir(".")))
 
 	log.Println("Server started at :8080")
@@ -186,7 +180,7 @@ func main() {
 }
 
 func metricsChartHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "resource/metricsChart.js")
+	http.ServeFile(w, r, "resources/metricsChart.js")
 }
 
 func loadListTagsHandler(w http.ResponseWriter, r *http.Request) {

@@ -28,29 +28,29 @@ func (plc *PLC) Disconnect() {
 	plc.client.Disconnect()
 }
 
-// ReadTagInt32 reads an int32 value from the specified tag.
-func (plc *PLC) ReadTagInt32(tagName string) (int32, error) {
-	var tagValue int32
-	err := plc.client.Read(tagName, &tagValue)
-	return tagValue, err
-}
+// // ReadTagInt32 reads an int32 value from the specified tag.
+// func (plc *PLC) ReadTagInt32(tagName string) (int32, error) {
+// 	var tagValue int32
+// 	err := plc.client.Read(tagName, &tagValue)
+// 	return tagValue, err
+// }
 
-// WriteTagInt32 writes an int32 value to the specified tag.
-func (plc *PLC) WriteTagInt32(tagName string, value int32) error {
-	return plc.client.Write(tagName, value)
-}
+// // WriteTagInt32 writes an int32 value to the specified tag.
+// func (plc *PLC) WriteTagInt32(tagName string, value int32) error {
+// 	return plc.client.Write(tagName, value)
+// }
 
-// ReadTagFloat32 reads a float32 value from the specified tag.
-func (plc *PLC) ReadTagFloat32(tagName string) (float32, error) {
-	var tagValue float32
-	err := plc.client.Read(tagName, &tagValue)
-	return tagValue, err
-}
+// // ReadTagFloat32 reads a float32 value from the specified tag.
+// func (plc *PLC) ReadTagFloat32(tagName string) (float32, error) {
+// 	var tagValue float32
+// 	err := plc.client.Read(tagName, &tagValue)
+// 	return tagValue, err
+// }
 
-// WriteTagFloat32 writes a float32 value to the specified tag.
-func (plc *PLC) WriteTagFloat32(tagName string, value float32) error {
-	return plc.client.Write(tagName, value)
-}
+// // WriteTagFloat32 writes a float32 value to the specified tag.
+// func (plc *PLC) WriteTagFloat32(tagName string, value float32) error {
+// 	return plc.client.Write(tagName, value)
+// }
 
 // ReadTagBool reads a boolean value from the specified tag.
 func (plc *PLC) ReadTrigger(tagName string) (bool, error) {
@@ -171,28 +171,3 @@ func (plc *PLC) WriteTag(tagName string, tagType string, tagValue interface{}) (
 	}
 	return nil, err
 }
-
-// Custom function to read an array of int32 from the PLC
-// func (plc *PLC) ReadInt32Array(tagName string, length int) ([]int32, error) {
-// 	// Create a slice to hold the array values
-// 	values := make([]int32, length)
-
-// 	// Read each element individually
-// 	for i := 0; i < length; i++ {
-// 		elementName := fmt.Sprintf("%s[%d]", tagName, i)
-// 		value, err := plc.ReadTag(elementName, "dint")
-// 		if err != nil {
-// 			return nil, fmt.Errorf("problem reading element %d of %s: %v", i, tagName, err)
-// 		}
-
-// 		// Ensure the value is of type int32
-// 		intValue, ok := value.(int32)
-// 		if !ok {
-// 			return nil, fmt.Errorf("element %d of %s has incorrect type: %T", i, tagName, value)
-// 		}
-
-// 		values[i] = intValue
-// 	}
-
-// 	return values, nil
-// }
