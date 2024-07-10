@@ -8,9 +8,10 @@ import (
 
 // PlcTag represents a PLC tag that is to be stored in the database
 type PlcTag struct {
-	Name  string
-	Type  string
-	Value interface{}
+	Name   string
+	Type   string
+	Value  interface{}
+	Length int
 }
 
 func InitDB(db *sql.DB) error {
@@ -18,16 +19,17 @@ func InitDB(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS tags (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL UNIQUE,
-		type TEXT NOT NULL
+		type TEXT NOT NULL,
+		length INTEGER
 	);
 	`
 	_, err := db.Exec(query)
 	return err
 }
 
-func InsertTag(db *sql.DB, name, tagType string) error {
-	query := `INSERT INTO tags (name, type) VALUES (?, ?)`
-	_, err := db.Exec(query, name, tagType)
+func InsertTag(db *sql.DB, name, tagType string, length int) error {
+	query := `INSERT INTO tags (name, type, length) VALUES (?, ?, ?)`
+	_, err := db.Exec(query, name, tagType, length)
 	return err
 }
 
@@ -38,7 +40,7 @@ func RemoveTag(db *sql.DB, name string) error {
 }
 
 func FetchTags(db *sql.DB) ([]PlcTag, error) {
-	rows, err := db.Query(`SELECT name, type FROM tags`)
+	rows, err := db.Query(`SELECT name, type, length FROM tags`)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +49,7 @@ func FetchTags(db *sql.DB) ([]PlcTag, error) {
 	var tags []PlcTag
 	for rows.Next() {
 		var tag PlcTag
-		if err := rows.Scan(&tag.Name, &tag.Type); err != nil {
+		if err := rows.Scan(&tag.Name, &tag.Type, &tag.Length); err != nil {
 			return nil, err
 		}
 		tags = append(tags, tag)

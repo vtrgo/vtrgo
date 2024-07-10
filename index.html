@@ -17,14 +17,12 @@
             <button hx-get="/load-list-tags" hx-target="#iframe-content" hx-swap="innerHTML">List Tags</button>
             <button hx-get="/load-add-tags" hx-target="#iframe-content" hx-swap="innerHTML">Add Tags</button>
             <button hx-get="/load-remove-tags" hx-target="#iframe-content" hx-swap="innerHTML">Remove Tags</button>
-            <button hx-get="/load-list-remove-tags" hx-target="#iframe-content" hx-swap="innerHTML">List & Remove Tags</button>
-
         </div>
         <!-- Main Content Area -->
         <div class="main-content">
             <!-- Metrics Data Section -->
             <h2>Dashboard</h2>          
-            <div id="metrics-section" class="metrics-section" hx-get="/metrics" hx-trigger="load, every 1s">
+            <div id="metrics-section" class="metrics-section" hx-get="/metrics" hx-trigger="load">
 
                 <div id="metrics-data">
                     <!-- Metrics data will be dynamically loaded here -->

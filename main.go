@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	plcdb "vtrgo/db"
@@ -28,10 +29,15 @@ func main() {
 
 	// Declare a PLC tag as a test integer variable
 	myTag := plcdb.PlcTag{
-		Name:  "Program:HMI_Executive_Control.TestDint",
-		Type:  "int32",
-		Value: 0}
+		Name: "Program:HMI_Executive_Control.TestDint",
+		Type: "dint",
+	}
 
+	myDintArray := plcdb.PlcTag{
+		Name:   "Program:HMI_Executive_Control.RealData",
+		Type:   "[]real",
+		Length: 10,
+	}
 	// Create a new PLC identity using the IP address of the Logix controller
 	plc := plc.NewPLC("10.103.115.10")
 
@@ -44,7 +50,7 @@ func main() {
 	defer plc.Disconnect()
 
 	// Test read an integer value from the PLC
-	myTag.Value, err = plc.ReadTagInt32(myTag.Name)
+	myTag.Value, err = plc.ReadTag(myTag.Name, myTag.Type, myTag.Length)
 	if err != nil {
 		log.Printf("Error reading tag: %v", err)
 		return
@@ -53,12 +59,19 @@ func main() {
 
 	// Write an integer test value to the PLC
 	myTag.Value = myTag.Value.(int32) + 1
-	err = plc.WriteTagInt32(myTag.Name, myTag.Value.(int32))
+	newValue, err := plc.WriteTag(myTag.Name, myTag.Type, myTag.Value)
 	if err != nil {
 		log.Printf("Error writing to tag: %v", err)
 		return
 	}
-	fmt.Println("Tag value changed to:", myTag.Value)
+	fmt.Println("Tag value changed to:", newValue)
+
+	myDintArray.Value, err = plc.ReadTag(myDintArray.Name, myDintArray.Type, myDintArray.Length)
+	if err != nil {
+		log.Printf("Error reading tag: %v", err)
+		return
+	}
+	fmt.Printf("Tag was value: %f\n", myDintArray.Value)
 
 	// Create a connection to the plc_tags database
 	tagdb, err = sql.Open("sqlite3", "./plc_tags.db")
@@ -75,7 +88,7 @@ func main() {
 
 	// Creates the /metrics endpoint to display and update tag values in the browser
 	http.HandleFunc("/metrics", func(write http.ResponseWriter, read *http.Request) {
-		myTag.Value, err = plc.ReadTagInt32(myTag.Name)
+		myTag.Value, err = plc.ReadTag(myTag.Name, myTag.Type, myTag.Length)
 		htmlResponse := fmt.Sprintf("<p>%s: <span id=\"tagValue\">%d</span></p>", myTag.Name, myTag.Value)
 		write.Header().Set("Content-Type", "text/html")
 		write.Write([]byte(htmlResponse))
@@ -84,7 +97,7 @@ func main() {
 	// Creates the /update endpoint to increment the test integer value and store the new value in excel
 	http.HandleFunc("/update", func(write http.ResponseWriter, read *http.Request) {
 		myTag.Value = myTag.Value.(int32) + 1
-		plc.WriteTagInt32(myTag.Name, myTag.Value.(int32))
+		plc.WriteTag(myTag.Name, myTag.Type, myTag.Value)
 		log.Printf("Tag value updated: %v", myTag.Value)
 
 		htmlResponse := fmt.Sprintf("<p>%s: <span id=\"tagValue\">%d</span></p>", myTag.Name, myTag.Value)
@@ -122,7 +135,7 @@ func main() {
 	})
 
 	triggerTag := "Program:HMI_Executive_Control.DataTrigger"
-	responseTag := "Program:HMI_Executive_Control.TriggerResponse"
+	responseTag := "Program:HMI_Executive_Control.DataResponse"
 
 	interval := 300 * time.Millisecond
 
@@ -150,7 +163,7 @@ func main() {
 	http.HandleFunc("js/metricsChart.js", metricsChartHandler)
 
 	fs := http.FileServer(http.Dir("."))
-	http.Handle("/resource/styles.css", fs)
+	// http.Handle("/resource/styles.css", fs)
 	// http.Handle("/list-tags.html", fs)
 	// http.Handle("/add-tags.html", fs)
 	// http.Handle("/remove-tags.html", fs)
@@ -183,17 +196,35 @@ func loadListRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "list-remove-tags.html")
 }
 
+// Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
+func listTagsHandler(w http.ResponseWriter, r *http.Request) {
+	tags, err := plcdb.FetchTags(tagdb)
+	if err != nil {
+		log.Printf("Failed to fetch tags: %v", err)
+		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "<ul>")
+	for _, tag := range tags {
+		fmt.Fprintf(w, "<li>%s (%s)[%d]</li>", tag.Name, tag.Type, tag.Length)
+	}
+	fmt.Fprintf(w, "</ul>")
+}
+
 // Handles the /add-tag endpoint for adding new tags to the plc_tags database
 func addTagHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		tag := r.FormValue("tag")
 		tagType := r.FormValue("type")
+		lengthText := r.FormValue("length")
+		length, err := strconv.Atoi(lengthText)
 		if tag == "" || tagType == "" {
 			http.Error(w, "Tag name and type are required", http.StatusBadRequest)
 			return
 		}
 
-		err := plcdb.InsertTag(tagdb, tag, tagType)
+		plcdb.InsertTag(tagdb, tag, tagType, length)
 		if err != nil {
 			log.Printf("Failed to insert tag: %v", err)
 			http.Error(w, "Failed to insert tag", http.StatusInternalServerError)
@@ -227,22 +258,6 @@ func removeTagHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
-func listTagsHandler(w http.ResponseWriter, r *http.Request) {
-	tags, err := plcdb.FetchTags(tagdb)
-	if err != nil {
-		log.Printf("Failed to fetch tags: %v", err)
-		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "<ul>")
-	for _, tag := range tags {
-		fmt.Fprintf(w, "<li>%s ((%s))</li>", tag.Name, tag.Type)
-	}
-	fmt.Fprintf(w, "</ul>")
-}
-
 // Handles the /list-remove-tags endpoint for displaying all the tags in the database with a delete buttin next to each tag
 func listRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
 	tags, err := plcdb.FetchTags(tagdb)
@@ -260,8 +275,30 @@ func listRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
 		<button hx-delete="/remove-tag?name=%s" hx-swap="innerHTML">Delete</button>
 		</li>
 		`, tag.Name, tag.Type, tag.Name)
+		plcdb.RemoveTag(tagdb, tag.Name)
 	}
 	fmt.Fprintf(w, "</ul>")
+}
+
+// Handles the /remove-tag endpoint for deleting tags from the plc_tags database
+func instantRemoveTagHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		tag := r.FormValue("removed-tag")
+		if tag == "" {
+			http.Error(w, "Tag name required", http.StatusBadRequest)
+			return
+		}
+
+		err := plcdb.RemoveTag(tagdb, tag)
+		if err != nil {
+			log.Printf("Failed to remove tag: %v", err)
+			http.Error(w, "Failed to delete tag", http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(w, "Tag '%s' removed successfully!", tag)
+	} else {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	}
 }
 
 // Goroutine to monitor a boolean trigger tag in the PLC.
@@ -271,7 +308,7 @@ func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 	go func() {
 
 		for {
-			trigger, err := plc.ReadTagBool(triggerTag)
+			trigger, err := plc.ReadTrigger(triggerTag)
 			if err != nil {
 				log.Printf("Error checking trigger: %v", err)
 				time.Sleep(interval)
@@ -290,23 +327,7 @@ func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 
 				var plcTags []excel.Tag
 				for _, tag := range tags {
-					var tagValue interface{}
-					var err error
-
-					switch tag.Type {
-					case "int32":
-						tagValue, err = plc.ReadTagInt32(tag.Name)
-					case "real":
-						tagValue, err = plc.ReadTagFloat32(tag.Name)
-					case "bool":
-						tagValue, err = plc.ReadTagBool(tag.Name)
-					case "string":
-						tagValue, err = plc.ReadTagString(tag.Name)
-
-					default:
-						log.Printf("Unknown tag type %s for tag %s", tag.Type, tag.Name)
-						continue
-					}
+					tagValue, err := plc.ReadTag(tag.Name, tag.Type, tag.Length)
 
 					if err != nil {
 						log.Printf("Failed to read Tag %s: %v", tag.Name, err)
@@ -314,6 +335,7 @@ func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 					}
 
 					plcTags = append(plcTags, excel.Tag{Name: tag.Name, Value: tagValue})
+
 				}
 
 				if len(plcTags) > 0 {
@@ -323,7 +345,7 @@ func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 						log.Printf("Failed to write to Excel: %v", err)
 					}
 				}
-				err = plc.WriteTagInt32(responseTag, 1)
+				err = plc.WriteResponse(responseTag, true)
 				if err != nil {
 					log.Printf("Failed to write response tag: %v", err)
 				}
