@@ -10,6 +10,7 @@ import (
 	"time"
 
 	plcdb "vtrgo/db"
+	"vtrgo/email"
 	"vtrgo/excel"
 	"vtrgo/plc"
 
@@ -23,6 +24,22 @@ type MetricsData struct {
 }
 
 func main() {
+
+	config, err := email.LoadConfig()
+	if err != nil {
+		log.Fatal("Error loading config:", err)
+	}
+
+	attachment := "output_files/Halkey_43BK-730-Data_2024-06-10.xlsx"
+	recipient := "lucas@vtrfeedersolutions.com"
+	subject := "This is an automated message from vtrgo."
+	message := "Please find your data report attached."
+
+	err = email.SendEmail(config, recipient, subject, message, attachment)
+	if err != nil {
+		log.Println("Error sending email:", err)
+	}
+	log.Printf("Data successfully sent to: %v", recipient)
 
 	// Test a command line introduction to the user
 	welcome("Justin")
@@ -42,7 +59,7 @@ func main() {
 	plc := plc.NewPLC("10.103.115.10")
 
 	// Make a connection to the PLC
-	err := plc.Connect()
+	err = plc.Connect()
 	if err != nil {
 		log.Printf("Error connecting to PLC: %v", err)
 		return
@@ -283,27 +300,6 @@ func listRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "</ul>")
 }
 
-// Handles the /remove-tag endpoint for deleting tags from the plc_tags database
-func instantRemoveTagHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		tag := r.FormValue("removed-tag")
-		if tag == "" {
-			http.Error(w, "Tag name required", http.StatusBadRequest)
-			return
-		}
-
-		err := plcdb.RemoveTag(tagdb, tag)
-		if err != nil {
-			log.Printf("Failed to remove tag: %v", err)
-			http.Error(w, "Failed to delete tag", http.StatusInternalServerError)
-			return
-		}
-		fmt.Fprintf(w, "Tag '%s' removed successfully!", tag)
-	} else {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-	}
-}
-
 // Goroutine to monitor a boolean trigger tag in the PLC.
 // When triggerTag is activated (True state), reads all tag values in the plc_tags database and stores them in excel
 func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, filePath string, interval time.Duration) {
@@ -357,4 +353,5 @@ func startTriggerChecker(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 			time.Sleep(interval)
 		}
 	}()
+
 }
