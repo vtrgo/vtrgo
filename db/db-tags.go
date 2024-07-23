@@ -1,4 +1,4 @@
-package tagdb
+package db
 
 import (
 	"database/sql"

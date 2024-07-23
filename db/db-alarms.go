@@ -1,4 +1,4 @@
-package plcdb
+package db
 
 import (
 	"database/sql"

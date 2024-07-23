@@ -6,9 +6,9 @@
     <title>VTRGo: Users</title>
 </head>
 <body>
-    <h2>Remove a Recipient</h2>
+    <h2>Remove User</h2>
     <form id="remove-user-form" hx-post="/remove-user" hx-target="#response" hx-swap="innerHTML">
-        <label for="removeuser">User Name:</label>
+        <label for="removeuser">User EMail:</label>
         <input type="text" id="removed-user" name="removed-user" required>
         <button type="submit">Remove User</button>
     </form>

@@ -57,7 +57,7 @@ func L5XCreate() {
 		},
 	}
 
-	file, err := os.Create("output.L5X")
+	file, err := os.Create("output_files/output.L5X")
 	if err != nil {
 		panic(err)
 	}

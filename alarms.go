@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	plcdb "vtrgo/db"
+	"vtrgo/db"
 	"vtrgo/excel"
 	"vtrgo/plc"
 
@@ -29,7 +29,7 @@ func alarmTriggerRoutine(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 			if trigger {
 				log.Println("Alarm trigger activated, loading alarm tags")
 
-				tags, err := plcdb.FetchTags(tagdb)
+				tags, err := db.FetchTags(tagdb, "alarmTags")
 				if err != nil {
 					log.Printf("Failed to fetch tags: %v", err)
 					time.Sleep(interval)

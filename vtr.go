@@ -10,8 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	plcdb "vtrgo/db"
-	"vtrgo/tagdb"
+	"vtrgo/db"
 
 	"vtrgo/excel"
 	"vtrgo/plc"
@@ -21,6 +20,7 @@ import (
 
 var dataTagsDb *sql.DB
 var alarmTagsDb *sql.DB
+var usersDb *sql.DB
 
 type MetricsData struct {
 	Value int32 `json:"value"`
@@ -28,7 +28,8 @@ type MetricsData struct {
 
 func main() {
 
-	plcdb.Work()
+	// create.L5XCreate()
+	db.Work()
 
 	// config, err := email.LoadConfig()
 	// if err != nil {
@@ -62,12 +63,12 @@ func main() {
 	welcome("Justin")
 
 	// Declare a PLC tag as a test integer variable
-	myTag := plcdb.PlcTag{
+	myTag := db.PlcTag{
 		Name: "Program:HMI_Executive_Control.TestDint",
 		Type: "dint",
 	}
 
-	myDintArray := plcdb.PlcTag{
+	myDintArray := db.PlcTag{
 		Name:   "Program:HMI_Executive_Control.RealData",
 		Type:   "[]real",
 		Length: 10,
@@ -117,14 +118,14 @@ func main() {
 	}
 
 	// Create a connection to the plc_tags database
-	dataTagsDb, err = sql.Open("sqlite3", "./plc_tags.db")
+	dataTagsDb, err = sql.Open("sqlite3", "./db_tags.db")
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
 	defer dataTagsDb.Close()
 
 	// Initialize and create the database if it does not already exist
-	err = plcdb.InitPlcDB(dataTagsDb)
+	err = db.InitTagDB(dataTagsDb, "dataTags")
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
@@ -137,13 +138,24 @@ func main() {
 	defer alarmTagsDb.Close()
 
 	// Initialize and create the database if it does not already exist
-	tableName := "alarmTags"
-	err = tagdb.InitTagDB(alarmTagsDb, tableName)
+	err = db.InitTagDB(alarmTagsDb, "alarmTags")
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	tagdb.FetchTags(alarmTagsDb, tableName)
+	// Create a connection to the plc_tags database
+	usersDb, err = sql.Open("sqlite3", "./db_users.db")
+	if err != nil {
+		log.Fatalf("Failed to open database: %v", err)
+	}
+	defer usersDb.Close()
+
+	// Initialize and create the database if it does not already exist
+	err = db.InitUserDB(usersDb)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+
 	// Creates the /metrics endpoint to display and update tag values in the browser
 	http.HandleFunc("/metrics", func(write http.ResponseWriter, read *http.Request) {
 		myTag.Value, err = plc.ReadTag(myTag.Name, myTag.Type, myTag.Length)
@@ -209,8 +221,13 @@ func main() {
 		tmpl.Execute(w, nil)
 	})
 
-	http.HandleFunc("/load-email-section", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/load-users-section", func(w http.ResponseWriter, r *http.Request) {
 		tmpl := template.Must(template.ParseFiles("templates/users-section.html"))
+		tmpl.Execute(w, nil)
+	})
+
+	http.HandleFunc("/load-metrics-section", func(w http.ResponseWriter, r *http.Request) {
+		tmpl := template.Must(template.ParseFiles("templates/metrics-section.html"))
 		tmpl.Execute(w, nil)
 	})
 
@@ -232,13 +249,12 @@ func main() {
 	startTriggerChecker(dataTagsDb, plc, triggerTag, responseTag, filePath, interval)
 
 	// Sets up endpoint handlers for each function call
-	http.HandleFunc("/add-tag", addTagHandler)
-	http.HandleFunc("/remove-tag", removeTagHandler)
-	http.HandleFunc("/list-tags", listTagsHandler)
+	http.HandleFunc("/add-tag", addDataTagHandler)
+	http.HandleFunc("/remove-tag", removeDataTagHandler)
+	http.HandleFunc("/list-tags", listDataTagsHandler)
 	http.HandleFunc("/add-alarm-tag", addAlarmTagHandler)
 	http.HandleFunc("/remove-alarm-tag", removeAlarmTagHandler)
 	http.HandleFunc("/list-alarm-tags", listAlarmTagsHandler)
-	http.HandleFunc("/list-remove-tags", listRemoveTagsHandler)
 	http.HandleFunc("/load-list-tags", loadListTagsHandler)
 	http.HandleFunc("/load-add-tags", loadAddTagsHandler)
 	http.HandleFunc("/load-remove-tags", loadRemoveTagsHandler)
@@ -307,8 +323,8 @@ func loadListRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
-func listTagsHandler(w http.ResponseWriter, r *http.Request) {
-	tags, err := plcdb.FetchTags(dataTagsDb)
+func listDataTagsHandler(w http.ResponseWriter, r *http.Request) {
+	tags, err := db.FetchTags(dataTagsDb, "dataTags")
 	if err != nil {
 		log.Printf("Failed to fetch tags: %v", err)
 		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
@@ -323,7 +339,7 @@ func listTagsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Handles the /add-tag endpoint for adding new tags to the plc_tags database
-func addTagHandler(w http.ResponseWriter, r *http.Request) {
+func addDataTagHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		tag := r.FormValue("tag")
 		tagType := r.FormValue("type")
@@ -334,7 +350,7 @@ func addTagHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		plcdb.InsertTag(dataTagsDb, tag, tagType, length)
+		db.InsertTag(dataTagsDb, "dataTags", tag, tagType, length)
 		if err != nil {
 			log.Printf("Failed to insert tag: %v", err)
 			http.Error(w, "Failed to insert tag", http.StatusInternalServerError)
@@ -348,7 +364,7 @@ func addTagHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Handles the /remove-tag endpoint for deleting tags from the plc_tags database
-func removeTagHandler(w http.ResponseWriter, r *http.Request) {
+func removeDataTagHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		tag := r.FormValue("removed-tag")
 		if tag == "" {
@@ -356,7 +372,7 @@ func removeTagHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err := plcdb.RemoveTag(dataTagsDb, tag)
+		err := db.RemoveTag(dataTagsDb, "dataTags", tag)
 		if err != nil {
 			log.Printf("Failed to remove tag: %v", err)
 			http.Error(w, "Failed to delete tag", http.StatusInternalServerError)
@@ -370,7 +386,7 @@ func removeTagHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
 func listAlarmTagsHandler(w http.ResponseWriter, r *http.Request) {
-	tags, err := tagdb.FetchTags(alarmTagsDb, "alarmTags")
+	tags, err := db.FetchTags(alarmTagsDb, "alarmTags")
 	if err != nil {
 		log.Printf("Failed to fetch tags: %v", err)
 		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
@@ -396,7 +412,7 @@ func addAlarmTagHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		tagdb.InsertTag(alarmTagsDb, "alarmTags", tag, tagType, length)
+		db.InsertTag(alarmTagsDb, "alarmTags", tag, tagType, length)
 		if err != nil {
 			log.Printf("Failed to insert tag: %v", err)
 			http.Error(w, "Failed to insert tag", http.StatusInternalServerError)
@@ -418,7 +434,7 @@ func removeAlarmTagHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err := tagdb.RemoveTag(alarmTagsDb, "alarmTags", tag)
+		err := db.RemoveTag(alarmTagsDb, "alarmTags", tag)
 		if err != nil {
 			log.Printf("Failed to remove tag: %v", err)
 			http.Error(w, "Failed to delete tag", http.StatusInternalServerError)
@@ -432,7 +448,7 @@ func removeAlarmTagHandler(w http.ResponseWriter, r *http.Request) {
 
 // Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
 func listUsersHandler(w http.ResponseWriter, r *http.Request) {
-	users, err := plcdb.FetchUsers(dataTagsDb, false)
+	users, err := db.FetchUsers(usersDb, false)
 	if err != nil {
 		log.Printf("Failed to fetch users: %v", err)
 		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
@@ -457,7 +473,7 @@ func addUserHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err := plcdb.InsertUser(dataTagsDb, user, email, active)
+		err := db.InsertUser(usersDb, user, email, active)
 		if err != nil {
 			log.Printf("Failed to insert user: %v", err)
 			http.Error(w, "Failed to insert user", http.StatusInternalServerError)
@@ -479,7 +495,7 @@ func removeUserHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err := plcdb.RemoveUser(dataTagsDb, user)
+		err := db.RemoveUser(usersDb, user)
 		if err != nil {
 			log.Printf("Failed to remove user: %v", err)
 			http.Error(w, "Failed to delete user", http.StatusInternalServerError)
@@ -489,28 +505,6 @@ func removeUserHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 	}
-}
-
-// Handles the /list-remove-tags endpoint for displaying all the tags in the database with a delete buttin next to each tag
-func listRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
-	tags, err := plcdb.FetchTags(dataTagsDb)
-	if err != nil {
-		log.Printf("Failed to fetch tags: %v", err)
-		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "<ul>")
-	for _, tag := range tags {
-		fmt.Fprintf(w, `
-		<li>
-		%s (%s)
-		<button hx-delete="/remove-tag?name=%s" hx-swap="innerHTML">Delete</button>
-		</li>
-		`, tag.Name, tag.Type, tag.Name)
-		plcdb.RemoveTag(dataTagsDb, tag.Name)
-	}
-	fmt.Fprintf(w, "</ul>")
 }
 
 // Goroutine to monitor a boolean trigger tag in the PLC.
@@ -530,7 +524,7 @@ func startTriggerChecker(dataTagsDb *sql.DB, plc *plc.PLC, triggerTag string, re
 			if trigger {
 				log.Println("Trigger activated, writing data to Excel")
 
-				tags, err := plcdb.FetchTags(dataTagsDb)
+				tags, err := db.FetchTags(dataTagsDb, "dataTags")
 				if err != nil {
 					log.Printf("Failed to fetch tags: %v", err)
 					time.Sleep(interval)
