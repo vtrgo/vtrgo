@@ -267,7 +267,6 @@ func main() {
 	http.HandleFunc("/load-list-users", loadListUsersHandler)
 	http.HandleFunc("/load-add-users", loadAddUsersHandler)
 	http.HandleFunc("/load-remove-users", loadRemoveUsersHandler)
-	http.HandleFunc("/load-list-remove-tags", loadListRemoveTagsHandler)
 	http.HandleFunc("js/metricsChart.js", metricsChartHandler)
 
 	http.Handle("/", http.FileServer(http.Dir(".")))
@@ -316,10 +315,6 @@ func loadAddUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 func loadRemoveUsersHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "templates/remove-users.html")
-}
-
-func loadListRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "templates/list-remove-tags.html")
 }
 
 // Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
