@@ -1,0 +1,11 @@
+<h2>Dashboard</h2>
+    <div id="metrics-section" class="metrics-section" hx-get="/metrics" hx-trigger="load">
+        <div id="metrics-data"> -->
+        <!-- Metrics data will be dynamically loaded here -->
+        </div>
+    </div>
+    <div id="update-data">
+        <button hx-post="/update" hx-trigger="click" hx-target="#metrics-section" hx-swap="innerHTML">Add 1</button>
+    </div>
+
+    

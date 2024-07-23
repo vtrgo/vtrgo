@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTRGo: Tags</title>
+</head>
+<body>
+    <h2>Add Alarm Tag</h2>
+    <form id="add-tag-form" hx-post="/add-alarm-tag" hx-target="#response" hx-swap="innerHTML">
+        <label for="tag">Alarm Tag Name:</label>
+        <input type="text" id="tag" name="tag" required>
+        <label for="type">Tag Type:</label>
+        <select id="type" name="type" required>
+            <option value="bool">BOOL</option>
+            <option value="int">INT</option>
+            <option value="dint">DINT</option>
+            <option value="real">REAL</option>
+            <option value="[]dint">DINT ARRAY</option>
+            <option value="[]real">REAL ARRAY</option>
+        </select>
+        <label for="length">Length (if array):</label>
+        <input type="number" id="length" name="length">
+        <button type="submit">Add Tag</button>
+    </form>
+    <div id="response"></div>
+</body>
+</html>

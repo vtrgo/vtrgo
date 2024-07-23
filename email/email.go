@@ -2,7 +2,9 @@ package email
 
 import (
 	"encoding/json"
+	"html/template"
 	"os"
+	"strings"
 
 	"gopkg.in/gomail.v2"
 )
@@ -12,6 +14,12 @@ type Config struct {
 	SMTPPort int    `json:"SMTPPort"`
 	Username string `json:"Username"`
 	Password string `json:"Password"`
+}
+
+type EmailData struct {
+	Subject string
+	Title   string
+	Body    string
 }
 
 func LoadConfig() (*Config, error) {
@@ -32,12 +40,33 @@ func LoadConfig() (*Config, error) {
 	return config, nil
 }
 
-func SendEmail(config *Config, to, subject, body, attachmentPath string) error {
+func SendEmail(config *Config, to, subject, body, attachmentPath string, isHTML bool) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", config.Username)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
-	m.SetBody("text/plain", body)
+
+	if isHTML {
+		data := EmailData{
+			Subject: subject,
+			Title:   subject,
+			Body:    body,
+		}
+		tmpl, err := template.ParseFiles("templates/email-template.html")
+		if err != nil {
+			return err
+		}
+		htmlBody := ""
+		htmlWriter := &strings.Builder{}
+		err = tmpl.Execute(htmlWriter, data)
+		if err != nil {
+			return err
+		}
+		htmlBody = htmlWriter.String()
+		m.SetBody("text/html", htmlBody)
+	} else {
+		m.SetBody("text/plain", body)
+	}
 
 	if attachmentPath != "" {
 		m.Attach(attachmentPath)

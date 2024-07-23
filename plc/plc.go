@@ -171,3 +171,75 @@ func (plc *PLC) WriteTag(tagName string, tagType string, tagValue interface{}) (
 	}
 	return nil, err
 }
+
+// ReadTag reads a value from the specified tag.
+func (plc *PLC) ReadAlarmValue(tagName string, tagType string, length int) (any, error) {
+	var err error
+	switch tagType {
+	case "bool":
+		var tagValue bool
+		err := plc.client.Read(tagName, &tagValue)
+		return tagValue, err
+	case "int":
+		var tagValue int16
+		err := plc.client.Read(tagName, &tagValue)
+		return tagValue, err
+	case "dint":
+		var tagValue int32
+		err := plc.client.Read(tagName, &tagValue)
+		return tagValue, err
+	case "real":
+		var tagValue float32
+		err := plc.client.Read(tagName, &tagValue)
+		return tagValue, err
+	case "string":
+		var tagValue string
+		err := plc.client.Read(tagName, &tagValue)
+		return tagValue, err
+	case "[]dint":
+		values := make([]int32, length)
+
+		// Read each element individually
+		for i := 0; i < length; i++ {
+			elementName := fmt.Sprintf("%s[%d]", tagName, i)
+			value, err := plc.ReadTag(elementName, "dint", 0)
+			if err != nil {
+				return nil, fmt.Errorf("problem reading element %d of %s: %v", i, tagName, err)
+			}
+
+			// Ensure the value is of type int32
+			intValue, ok := value.(int32)
+			if !ok {
+				return nil, fmt.Errorf("element %d of %s has incorrect type: %T", i, tagName, value)
+			}
+
+			values[i] = intValue
+		}
+
+		return values, nil
+	case "[]real":
+		values := make([]float32, length)
+
+		// Read each element individually
+		for i := 0; i < length; i++ {
+			elementName := fmt.Sprintf("%s[%d]", tagName, i)
+			value, err := plc.ReadTag(elementName, "real", 0)
+			if err != nil {
+				return nil, fmt.Errorf("problem reading element %d of %s: %v", i, tagName, err)
+			}
+
+			// Ensure the value is of type int32
+			realValue, ok := value.(float32)
+			if !ok {
+				return nil, fmt.Errorf("element %d of %s has incorrect type: %T", i, tagName, value)
+			}
+
+			values[i] = realValue
+		}
+
+		return values, nil
+	default:
+		log.Printf("Incorrect data type, %v", err)
+	}
+	return nil, err
+}

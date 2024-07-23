@@ -1,0 +1,14 @@
+<div class="container">
+    <div class="sidebar">
+        <h3>Users</h3> 
+        <button hx-get="/load-list-users" hx-target="#iframe-content" hx-swap="innerHTML">List Users</button>
+        <button hx-get="/load-add-users" hx-target="#iframe-content" hx-swap="innerHTML">Add Users</button>
+        <button hx-get="/load-remove-users" hx-target="#iframe-content" hx-swap="innerHTML">Remove Users</button>
+    </div>
+    <div class="content">
+        <div id="iframe-content" class="iframe-content">
+            <div id="iframe-content" hx-get="/load-list-users" hx-trigger="load" hx-swap="innerHTML">
+                <!-- Dynamic content will be loaded here -->
+        </div>
+    </div>
+</div>

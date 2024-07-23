@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTRGo: Users</title>
+</head>
+<body>
+    <h2>Add a RecipientTag</h2>
+    <form id="add-tag-form" hx-post="/add-user" hx-target="#response" hx-swap="innerHTML">
+        <label for="name">User Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="type">User Email:</label>
+        <input type="text" id="email" name="email" required>
+        <label for="active">Active:</label>
+        <input type="checkbox" id="active" name="active">
+        <button type="submit">Add User</button>
+    </form>
+    <div id="response"></div>
+</body>
+</html>

@@ -157,6 +157,109 @@ code {
     overflow-y: auto;
 }
 
+/* Top Navigation Menu Styles */
+.top-nav {
+    background-color: #333; /* Dark background */
+    overflow: hidden; /* Clear floats */
+    display: flex;
+    justify-content: normal;
+    align-items: center;
+    padding: 15px 15px;
+}
+
+.top-nav button {
+    background-color: #dc9900; /* Green background */
+    border: none;
+    color: white; /* White text */
+    padding: 14px 20px; /* Some padding */
+    text-align: center; /* Center the text */
+    text-decoration: none; /* Remove underline */
+    font-size: 17px; /* Increase font size */
+    margin: 15px 15px; /* Margin between buttons */
+    cursor: pointer; /* Pointer/hand icon */
+    transition: background-color 0.3s; /* Smooth transition */
+    border-radius: 4px; /* Rounded corners */
+}
+
+.top-nav button:hover {
+    background-color: #b78000; /* Darker green */
+}
+
+.top-nav a {
+    color: white; /* White text */
+    text-align: center; /* Center the text */
+    text-decoration: none; /* Remove underline */
+    padding: 14px 20px; /* Some padding */
+    display: block; /* Make it block element */
+}
+
+.top-nav a:hover {
+    background-color: #ddd; /* Light background on hover */
+    color: black; /* Black text on hover */
+}
+
+.top-nav .search-container {
+    display: flex;
+    align-items: center;
+    margin-right: 16px; /* Right margin */
+}
+
+.top-nav input[type=text] {
+    padding: 6px;
+    margin-top: 8px;
+    font-size: 17px;
+    border: none;
+    border-radius: 4px; /* Rounded corners */
+}
+
+.top-nav .search-container button {
+    padding: 6px 10px;
+    margin-top: 8px;
+    margin-left: -5px; /* Adjust to align with input */
+    background: #ddd;
+    font-size: 17px;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px; /* Rounded corners */
+}
+
+.top-nav .search-container button:hover {
+    background: #ccc; /* Darker background on hover */
+}
+
+.top-nav .dropdown {
+    display: inline-block;
+}
+
+.top-nav .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.top-nav .dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    text-align: left;
+}
+
+.top-nav .dropdown-content a:hover {
+    background-color: #f1f1f1;
+}
+
+.top-nav .dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.top-nav .dropdown:hover .dropbtn {
+    background-color: #3e8e41;
+}
+
 /* Metrics Section */
 .metrics-section {
     margin-bottom: 20px;
