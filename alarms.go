@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 
 // Goroutine to monitor a boolean trigger tag in the PLC.
 // When triggerTag is activated (True state), reads all tag values in the plc_tags database and stores them in excel
-func alarmTriggerRoutine(tagdb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, filePath string, interval time.Duration) {
+func alarmTriggerRoutine(alarmsDB *sql.DB, tagdb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, filePath string, interval time.Duration) {
 
 	go func() {
 
@@ -36,7 +37,7 @@ func alarmTriggerRoutine(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 					continue
 				}
 
-				var plcTags []excel.Tag
+				var plcTags []excel.AlarmTag
 				for _, tag := range tags {
 					tagValue, err := plc.ReadTag(tag.Name, tag.Type, tag.Length)
 
@@ -45,13 +46,39 @@ func alarmTriggerRoutine(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 						continue
 					}
 
-					plcTags = append(plcTags, excel.Tag{Name: tag.Name, Value: tagValue})
+					// Type assertion for []int32
+					intTagValues, ok := tagValue.([]int32)
+					if !ok {
+						log.Printf("Tag %s has an unexpected type: %T", tag.Name, tagValue)
+						continue
+					}
 
+					// Iterate over each int32 element in the array
+					for index, intTagValue := range intTagValues {
+						// Check which bits are true and log them
+						for i := 0; i < 32; i++ { // int32 has 32 bits
+							if (intTagValue & (1 << i)) != 0 {
+								tagName := fmt.Sprintf("%s[%d].%d", tag.Name, index, i)
+								// Fetch description from the database
+								tagMessage, err := db.FetchDescription(alarmsDB, tagName)
+								if err != nil {
+									log.Printf("Failed to fetch description for %s: %v", tagName, err)
+									tagMessage = "Description not found"
+								}
+								plcTags = append(plcTags, excel.AlarmTag{
+									Message: tagMessage,
+									Name:    tagName,
+									Value:   true,
+								})
+							}
+						}
+					}
 				}
 
 				if len(plcTags) > 0 {
-					plcData := excel.PlcTags{Tags: plcTags}
-					err = excel.WriteDataToExcel(plcData, filePath)
+					// Pass the tags to be written to Excel
+					log.Printf("plcTags: %v", plcTags)
+					err = excel.WriteAlarmsToExcel(excel.AlarmTags{AlarmTags: plcTags}, filePath)
 					if err != nil {
 						log.Printf("Failed to write to Excel: %v", err)
 					}

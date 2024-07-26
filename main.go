@@ -157,6 +157,19 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
+	alarmsDb, err := sql.Open("sqlite3", "./alarmsdb.db")
+	if err != nil {
+		fmt.Println("Error opening database:", err)
+		return
+	}
+	defer alarmsDb.Close()
+
+	err = db.InitAlarmDB(alarmsDb)
+	if err != nil {
+		fmt.Println("Error initializing database:", err)
+		return
+	}
+
 	// Creates the /metrics endpoint to display and update tag values in the browser
 	http.HandleFunc("/metrics", func(write http.ResponseWriter, read *http.Request) {
 		myTag.Value, err = plc.ReadTag(myTag.Name, myTag.Type, myTag.Length)
@@ -249,6 +262,11 @@ func main() {
 
 	startTriggerChecker(dataTagsDb, plc, triggerTag, responseTag, filePath, interval)
 
+	alarmTrigger := "Program:HMI_Executive_Control.AlarmTrigger"
+	alarmResponse := "Program:HMI_Executive_Control.AlarmResponse"
+	alarmFilePath := fmt.Sprintf("output_files/%s_%s-Alarms_%s.xlsx", customerName, recipeName, date)
+
+	alarmTriggerRoutine(alarmsDb, alarmTagsDb, plc, alarmTrigger, alarmResponse, alarmFilePath, interval)
 	// Sets up endpoint handlers for each function call
 	http.HandleFunc("/add-tag", addDataTagHandler)
 	http.HandleFunc("/remove-tag", removeDataTagHandler)

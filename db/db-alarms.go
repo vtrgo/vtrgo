@@ -92,6 +92,23 @@ func checkAlarms(db *sql.DB) error {
 	return nil
 }
 
+func FetchDescription(db *sql.DB, alarmTag string) (string, error) {
+	var description string
+
+	// Execute the query to fetch the description
+	err := db.QueryRow("SELECT message FROM alarms WHERE tag = ?", alarmTag).Scan(&description)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No rows found
+			return "", nil
+		}
+		return "", err
+	}
+
+	log.Printf("Message: %s given from Tag: %s", description, alarmTag)
+	return description, nil
+}
+
 func Work() {
 
 	xmlFile, err := os.Open("resources/22-045 Halkey FTAlarms for VSCode.xml")

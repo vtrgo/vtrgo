@@ -2,6 +2,7 @@ package excel
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -9,17 +10,18 @@ import (
 )
 
 // Tag represents a PLC tag with a name and value
-type Alarm struct {
-	Trigger int32
+type AlarmTag struct {
+	Name    string
 	Message string
+	Value   interface{}
 }
 
 // PlcTags represents a collection of PLC tags
-type Alarms struct {
-	Alarms []Alarm
+type AlarmTags struct {
+	AlarmTags []AlarmTag
 }
 
-func WriteAlarmsToExcel(data PlcTags, filePath string) error {
+func WriteAlarmsToExcel(data AlarmTags, filePath string) error {
 	var file *excelize.File
 	var err error
 
@@ -30,28 +32,9 @@ func WriteAlarmsToExcel(data PlcTags, filePath string) error {
 		index, _ := file.NewSheet("Sheet1")
 		// Set the value of headers
 		file.SetCellValue("Sheet1", "A1", "Timestamp")
-		colIndex := 1
-		for _, tag := range data.Tags {
-			switch v := tag.Value.(type) {
-			case []int32:
-				for i := range v {
-					col := string(rune('A' + colIndex))
-					file.SetCellValue("Sheet1", fmt.Sprintf("%s1", col), fmt.Sprintf("%s[%d]", tag.Name, i))
-					colIndex++
-				}
-			case []float32:
-				for i := range v {
-					col := string(rune('A' + colIndex))
-					file.SetCellValue("Sheet1", fmt.Sprintf("%s1", col), fmt.Sprintf("%s[%d]", tag.Name, i))
-					colIndex++
-				}
-
-			default:
-				col := string(rune('A' + colIndex))
-				file.SetCellValue("Sheet1", fmt.Sprintf("%s1", col), tag.Name)
-				colIndex++
-			}
-		}
+		file.SetCellValue("Sheet1", "B1", "Alarm Tag")
+		file.SetCellValue("Sheet1", "C1", "Alarm Description")
+		file.SetCellValue("Sheet1", "D1", "Value")
 		file.SetActiveSheet(index)
 	} else {
 		// Open the existing Excel file
@@ -68,41 +51,18 @@ func WriteAlarmsToExcel(data PlcTags, filePath string) error {
 	}
 	nextRow := len(rows) + 1
 
-	// Write the metrics data to the next row
+	// Get the current timestamp
 	timestamp := time.Now().Format(time.RFC3339)
-	file.SetCellValue("Sheet1", fmt.Sprintf("A%d", nextRow), timestamp)
-	colIndex := 1
-	for _, tag := range data.Tags {
-		switch v := tag.Value.(type) {
-		case []int:
-			for _, val := range v {
-				col := string(rune('A' + colIndex))
-				file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", col, nextRow), val)
-				colIndex++
-			}
-		case []int32:
-			for _, val := range v {
-				col := string(rune('A' + colIndex))
-				file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", col, nextRow), val)
-				colIndex++
-			}
-		case []float32:
-			for _, val := range v {
-				col := string(rune('A' + colIndex))
-				file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", col, nextRow), val)
-				colIndex++
-			}
-		case []float64:
-			for _, val := range v {
-				col := string(rune('A' + colIndex))
-				file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", col, nextRow), val)
-				colIndex++
-			}
-		default:
-			col := string(rune('A' + colIndex))
-			file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", col, nextRow), tag.Value)
-			colIndex++
-		}
+
+	for _, tag := range data.AlarmTags {
+		log.Printf("TAG:%v", tag)
+		// Write the metrics data to the next row
+		file.SetCellValue("Sheet1", fmt.Sprintf("A%d", nextRow), timestamp)
+		file.SetCellValue("Sheet1", fmt.Sprintf("B%d", nextRow), tag.Name)
+		file.SetCellValue("Sheet1", fmt.Sprintf("C%d", nextRow), tag.Message)
+		file.SetCellValue("Sheet1", fmt.Sprintf("D%d", nextRow), true)
+		nextRow++
+
 	}
 
 	// Save the file
