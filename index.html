@@ -17,6 +17,7 @@
         <button hx-get="/load-alarm-tags-section" hx-target="#content-section" hx-swap="innerHTML">Alarm Tags</button>
         <button hx-get="/load-users-section" hx-target="#content-section" hx-swap="innerHTML">Email Recipients</button>
         <button hx-get="/load-metrics-section" hx-target="#content-section" hx-swap="innerHTML">Metrics</button>
+        <button hx-get="/load-check-alarms" hx-target="#content-section" hx-swap="innerHTML">Alarms</button>
     </div>
     <div class="container">
         <!-- Dynamic Content Section -->
@@ -24,10 +25,6 @@
             <!-- This is where the sections will be dynamically loaded -->
         </div>
     </div>
-    <!-- Chart Content -->
-    <div id="chart-section" class="chart-container">
-        <canvas id="metricsChart"></canvas>
-        <div hx-get="/js/metricsChart.js" hx-trigger="load" hx-swap="outerHTML"></div>
-    </div>
+
 </body>
 </html>

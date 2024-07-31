@@ -157,18 +157,18 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	alarmsDb, err := sql.Open("sqlite3", "./alarmsdb.db")
-	if err != nil {
-		fmt.Println("Error opening database:", err)
-		return
-	}
-	defer alarmsDb.Close()
+	// alarmsDb, err := sql.Open("sqlite3", "./alarmsdb.db")
+	// if err != nil {
+	// 	fmt.Println("Error opening database:", err)
+	// 	return
+	// }
+	// defer alarmsDb.Close()
 
-	err = db.InitAlarmDB(alarmsDb)
-	if err != nil {
-		fmt.Println("Error initializing database:", err)
-		return
-	}
+	// err = db.InitAlarmDB(alarmsDb)
+	// if err != nil {
+	// 	fmt.Println("Error initializing database:", err)
+	// 	return
+	// }
 
 	// Creates the /metrics endpoint to display and update tag values in the browser
 	http.HandleFunc("/metrics", func(write http.ResponseWriter, read *http.Request) {
@@ -266,7 +266,7 @@ func main() {
 	alarmResponse := "Program:HMI_Executive_Control.AlarmResponse"
 	alarmFilePath := fmt.Sprintf("output_files/%s_%s-Alarms_%s.xlsx", customerName, recipeName, date)
 
-	alarmTriggerRoutine(alarmsDb, alarmTagsDb, plc, alarmTrigger, alarmResponse, alarmFilePath, interval)
+	alarmTriggerRoutine(alarmTagsDb, plc, alarmTrigger, alarmResponse, alarmFilePath, interval)
 	// Sets up endpoint handlers for each function call
 	http.HandleFunc("/add-tag", addDataTagHandler)
 	http.HandleFunc("/remove-tag", removeDataTagHandler)
@@ -286,6 +286,9 @@ func main() {
 	http.HandleFunc("/load-list-users", loadListUsersHandler)
 	http.HandleFunc("/load-add-users", loadAddUsersHandler)
 	http.HandleFunc("/load-remove-users", loadRemoveUsersHandler)
+	http.HandleFunc("/check-alarms", checkAlarmsHandler)
+	http.HandleFunc("/load-check-alarms", loadCheckAlarmsHandler)
+
 	http.HandleFunc("js/metricsChart.js", metricsChartHandler)
 
 	http.Handle("/", http.FileServer(http.Dir(".")))
@@ -334,6 +337,10 @@ func loadAddUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 func loadRemoveUsersHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "templates/remove-users.html")
+}
+
+func loadCheckAlarmsHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "templates/check-alarms.html")
 }
 
 // Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
@@ -521,6 +528,35 @@ func removeUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
+func checkAlarmsHandler(w http.ResponseWriter, r *http.Request) {
+	alarmsDb, err := sql.Open("sqlite3", "./alarmsdb.db")
+	if err != nil {
+		fmt.Println("Error opening database:", err)
+		return
+	}
+	defer alarmsDb.Close()
+
+	err = db.InitAlarmDB(alarmsDb)
+	if err != nil {
+		fmt.Println("Error initializing database:", err)
+		return
+	}
+
+	tags, err := db.CheckAlarms(alarmsDb)
+	if err != nil {
+		log.Printf("Failed to fetch tags: %v", err)
+		http.Error(w, "Failed to fetch tags", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintf(w, "<ul>")
+	for _, tag := range tags {
+		fmt.Fprintf(w, "<li>%s (%s)[%s]</li>", tag.Tag, tag.Message, tag.Trigger)
+	}
+	fmt.Fprintf(w, "</ul>")
+}
+
 // Goroutine to monitor a boolean trigger tag in the PLC.
 // When triggerTag is activated (True state), reads all tag values in the plc_tags database and stores them in excel
 func startTriggerChecker(dataTagsDb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, filePath string, interval time.Duration) {
@@ -536,6 +572,23 @@ func startTriggerChecker(dataTagsDb *sql.DB, plc *plc.PLC, triggerTag string, re
 			}
 
 			if trigger {
+
+				// config, err := email.LoadConfig()
+				// if err != nil {
+				// 	log.Fatal("Error loading config:", err)
+				// }
+				// recipient := "[SET RECIPIENT HERE]"
+				// subject := "Message from Halkey 22-045-EP:"
+				// message := "Please check on the tubes."
+				// attachment := ""
+
+				// err = email.SendEmail(config, recipient, subject, message, attachment, false)
+				// if err != nil {
+				// 	log.Println("Error sending email:", err)
+				// }
+
+				// log.Println("Email sent successfully!")
+
 				log.Println("Trigger activated, writing data to Excel")
 
 				tags, err := db.FetchTags(dataTagsDb, "dataTags")

@@ -7,5 +7,9 @@
     <div id="update-data">
         <button hx-post="/update" hx-trigger="click" hx-target="#metrics-section" hx-swap="innerHTML">Add 1</button>
     </div>
-
+    <!-- Chart Content -->
+    <div id="chart-section" class="chart-container">
+        <canvas id="metricsChart"></canvas>
+        <div hx-get="/js/metricsChart.js" hx-trigger="load" hx-swap="outerHTML"></div>
+    </div>
     

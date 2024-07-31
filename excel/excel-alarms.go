@@ -71,5 +71,5 @@ func WriteAlarmsToExcel(data AlarmTags, filePath string) error {
 		return err
 	}
 
-	return nil
+	return err
 }

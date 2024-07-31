@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTRGo: Alarms</title>
+</head>
+<body>
+    <h2>Check Alarms</h2>
+    <div id="check-alarms">
+        <!-- Tags will be listed here dynamically -->
+    </div>
+    <script>
+        htmx.ajax('GET', '/check-alarms', { target: '#check-alarms' });
+    </script>
+</body>
+</html>

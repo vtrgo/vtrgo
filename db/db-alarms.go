@@ -30,6 +30,13 @@ type Message struct {
 	Text    string `xml:"text,attr"`
 }
 
+type AlarmMessage struct {
+	ID      int
+	Trigger string
+	Message string
+	Tag     string
+}
+
 func InitAlarmDB(db *sql.DB) error {
 	alarmQuery := `
 	CREATE TABLE IF NOT EXISTS alarms (
@@ -66,7 +73,35 @@ func InsertAlarms(db *sql.DB, alarms Alarm) error {
 	return nil
 }
 
-func checkAlarms(db *sql.DB) error {
+func CheckAlarms(db *sql.DB) ([]AlarmMessage, error) {
+	rows, err := db.Query("SELECT id, trigger, message, tag FROM alarms")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var alarms []AlarmMessage
+
+	for rows.Next() {
+		var alarm AlarmMessage
+		err = rows.Scan(&alarm.ID, &alarm.Trigger, &alarm.Message, &alarm.Tag)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("ID: %d, Trigger: %s, Message: %s, Tag: %s\n", alarm.ID, alarm.Trigger, alarm.Message, alarm.Tag)
+		fmt.Printf("ID: %d, Trigger: %s, Message: %s, Tag: %s\n", alarm.ID, alarm.Trigger, alarm.Message, alarm.Tag)
+		alarms = append(alarms, alarm)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return alarms, nil
+}
+
+func listAlarms(db *sql.DB) error {
 	rows, err := db.Query("SELECT id, trigger, message, tag FROM alarms")
 	if err != nil {
 		return err
@@ -145,7 +180,7 @@ func Work() {
 
 	// fmt.Println("Alarms inserted successfully")
 
-	err = checkAlarms(db)
+	err = listAlarms(db)
 	if err != nil {
 		fmt.Println("Error checking alarms in database:", err)
 		return

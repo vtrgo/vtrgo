@@ -1,0 +1,12 @@
+<div class="container">
+<div class="sidebar">
+    <h3>Alarm Tags</h3> 
+    <button hx-get="/load-check-alarms" hx-target="#iframe-content" hx-swap="innerHTML">Check Alarms</button>
+</div>
+<div class="content">
+    <div id="iframe-content" class="iframe-content">
+        <div id="iframe-content" hx-get="/load-check-alarms" hx-trigger="load" hx-swap="innerHTML">
+        <!-- Dynamic content will be loaded here -->
+    </div>
+</div>
+</div>

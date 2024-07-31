@@ -15,7 +15,7 @@ import (
 
 // Goroutine to monitor a boolean trigger tag in the PLC.
 // When triggerTag is activated (True state), reads all tag values in the plc_tags database and stores them in excel
-func alarmTriggerRoutine(alarmsDB *sql.DB, tagdb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, filePath string, interval time.Duration) {
+func alarmTriggerRoutine(tagdb *sql.DB, plc *plc.PLC, triggerTag string, responseTag string, filePath string, interval time.Duration) {
 
 	go func() {
 
@@ -29,6 +29,18 @@ func alarmTriggerRoutine(alarmsDB *sql.DB, tagdb *sql.DB, plc *plc.PLC, triggerT
 
 			if trigger {
 				log.Println("Alarm trigger activated, loading alarm tags")
+				alarmsDb, err := sql.Open("sqlite3", "./alarmsdb.db")
+				if err != nil {
+					fmt.Println("Error opening database:", err)
+					return
+				}
+				defer alarmsDb.Close()
+
+				err = db.InitAlarmDB(alarmsDb)
+				if err != nil {
+					fmt.Println("Error initializing database:", err)
+					return
+				}
 
 				tags, err := db.FetchTags(tagdb, "alarmTags")
 				if err != nil {
@@ -60,7 +72,7 @@ func alarmTriggerRoutine(alarmsDB *sql.DB, tagdb *sql.DB, plc *plc.PLC, triggerT
 							if (intTagValue & (1 << i)) != 0 {
 								tagName := fmt.Sprintf("%s[%d].%d", tag.Name, index, i)
 								// Fetch description from the database
-								tagMessage, err := db.FetchDescription(alarmsDB, tagName)
+								tagMessage, err := db.FetchDescription(alarmsDb, tagName)
 								if err != nil {
 									log.Printf("Failed to fetch description for %s: %v", tagName, err)
 									tagMessage = "Description not found"
