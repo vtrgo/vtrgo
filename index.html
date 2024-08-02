@@ -24,6 +24,11 @@
         <div id="content-section">
             <!-- This is where the sections will be dynamically loaded -->
         </div>
+            <!-- Chart Content -->
+    <div id="chart-section" class="chart-container">
+        <canvas id="metricsChart"></canvas>
+        <div hx-get="js/metricsChart.js" hx-trigger="load" hx-swap="outerHTML"></div>
+    </div>
     </div>
 
 </body>

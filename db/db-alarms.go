@@ -88,8 +88,8 @@ func CheckAlarms(db *sql.DB) ([]AlarmMessage, error) {
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("ID: %d, Trigger: %s, Message: %s, Tag: %s\n", alarm.ID, alarm.Trigger, alarm.Message, alarm.Tag)
-		fmt.Printf("ID: %d, Trigger: %s, Message: %s, Tag: %s\n", alarm.ID, alarm.Trigger, alarm.Message, alarm.Tag)
+		// log.Printf("ID: %d, Trigger: %s, Message: %s, Tag: %s\n", alarm.ID, alarm.Trigger, alarm.Message, alarm.Tag)
+		// fmt.Printf("ID: %d, Trigger: %s, Message: %s, Tag: %s\n", alarm.ID, alarm.Trigger, alarm.Message, alarm.Tag)
 		alarms = append(alarms, alarm)
 	}
 

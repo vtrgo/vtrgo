@@ -157,19 +157,6 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	// alarmsDb, err := sql.Open("sqlite3", "./alarmsdb.db")
-	// if err != nil {
-	// 	fmt.Println("Error opening database:", err)
-	// 	return
-	// }
-	// defer alarmsDb.Close()
-
-	// err = db.InitAlarmDB(alarmsDb)
-	// if err != nil {
-	// 	fmt.Println("Error initializing database:", err)
-	// 	return
-	// }
-
 	// Creates the /metrics endpoint to display and update tag values in the browser
 	http.HandleFunc("/metrics", func(write http.ResponseWriter, read *http.Request) {
 		myTag.Value, err = plc.ReadTag(myTag.Name, myTag.Type, myTag.Length)
