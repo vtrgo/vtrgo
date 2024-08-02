@@ -268,6 +268,8 @@ func main() {
 
 	alarmTriggerRoutine(alarmTagsDb, plc, alarmTrigger, alarmResponse, alarmFilePath, interval)
 	// Sets up endpoint handlers for each function call
+	http.Handle("/", http.FileServer(http.Dir(".")))
+
 	http.HandleFunc("/add-tag", addDataTagHandler)
 	http.HandleFunc("/remove-tag", removeDataTagHandler)
 	http.HandleFunc("/list-tags", listDataTagsHandler)
@@ -288,10 +290,7 @@ func main() {
 	http.HandleFunc("/load-remove-users", loadRemoveUsersHandler)
 	http.HandleFunc("/check-alarms", checkAlarmsHandler)
 	http.HandleFunc("/load-check-alarms", loadCheckAlarmsHandler)
-
 	http.HandleFunc("js/metricsChart.js", metricsChartHandler)
-
-	http.Handle("/", http.FileServer(http.Dir(".")))
 
 	log.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
