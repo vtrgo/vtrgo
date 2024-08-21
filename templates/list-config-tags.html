@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VTRGo: Tags</title>
+</head>
+<body>
+    <h2>Configuration Tags</h2>
+    <div id="config-tag-list">
+        <!-- Tags will be listed here dynamically -->
+    </div>
+    <script>
+        htmx.ajax('GET', '/list-config-tags', { target: '#config-tag-list' });
+    </script>
+</body>
+</html>

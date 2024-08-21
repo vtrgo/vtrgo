@@ -13,6 +13,7 @@
     <h1>VTRGo: Data Collection</h1>
     <!-- Top Navigation Menu -->
     <div class="top-nav">
+        <button hx-get="/load-config-tags-section" hx-target="#content-section" hx-swap="innerHTML">Config Tags</button>
         <button hx-get="/load-data-tags-section" hx-target="#content-section" hx-swap="innerHTML">Data Tags</button>
         <button hx-get="/load-alarm-tags-section" hx-target="#content-section" hx-swap="innerHTML">Alarm Tags</button>
         <button hx-get="/load-users-section" hx-target="#content-section" hx-swap="innerHTML">Email Recipients</button>
@@ -24,11 +25,11 @@
         <div id="content-section">
             <!-- This is where the sections will be dynamically loaded -->
         </div>
-            <!-- Chart Content -->
+            <!-- Chart Content
     <div id="chart-section" class="chart-container">
         <canvas id="metricsChart"></canvas>
         <div hx-get="js/metricsChart.js" hx-trigger="load" hx-swap="outerHTML"></div>
-    </div>
+    </div> -->
     </div>
 
 </body>

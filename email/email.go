@@ -52,7 +52,7 @@ func SendEmail(config *Config, to, subject, body, attachmentPath string, isHTML 
 			Title:   subject,
 			Body:    body,
 		}
-		tmpl, err := template.ParseFiles("templates/email-template.html")
+		tmpl, err := template.ParseFiles("email-template.html")
 		if err != nil {
 			return err
 		}

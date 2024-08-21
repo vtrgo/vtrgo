@@ -3,4 +3,4 @@ VTRGo is an application written in Go for collecting and displaying data from Co
 
 ### Configuration
 
-` export EMAIL_CONFIG_FILE="resources/env/email-config.json" `
+` export EMAIL_CONFIG_FILE="env/email-config.json" `

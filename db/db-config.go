@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"log"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -57,4 +58,22 @@ func FetchConfigVariables(db *sql.DB) ([]ConfigVariable, error) {
 		variables = append(variables, variable)
 	}
 	return variables, nil
+}
+
+// RemoveConfigVariable removes a configuration variable from the database by name
+func FetchConfigTag(db *sql.DB, name string) (string, error) {
+	var configValue string
+
+	// Execute the query to fetch the description
+	err := db.QueryRow("SELECT value FROM config WHERE name = ?", name).Scan(&configValue)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No rows found
+			return "", nil
+		}
+		return "", err
+	}
+
+	log.Printf("ConfigTag: %s given from Name: %s", configValue, name)
+	return configValue, nil
 }
