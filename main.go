@@ -214,7 +214,7 @@ func main() {
 		// Prepare the response data
 
 		// Convert the response data to JSON
-		metricsData := MetricsData{myDintArray.Value.(int32)}
+		metricsData := MetricsData{myTag.Value.(int32)}
 		jsonResponse, err := json.Marshal(metricsData)
 		if err != nil {
 			http.Error(write, "Failed to encode JSON response", http.StatusInternalServerError)
