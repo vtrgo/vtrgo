@@ -214,7 +214,7 @@ func main() {
 		// Prepare the response data
 
 		// Convert the response data to JSON
-		metricsData := MetricsData{myTag.Value.(int32)}
+		metricsData := MetricsData{myDintArray.Value.(int32)}
 		jsonResponse, err := json.Marshal(metricsData)
 		if err != nil {
 			http.Error(write, "Failed to encode JSON response", http.StatusInternalServerError)
@@ -312,7 +312,7 @@ func main() {
 	http.HandleFunc("/load-remove-users", loadRemoveUsersHandler)
 	http.HandleFunc("/check-alarms", checkAlarmsHandler)
 	http.HandleFunc("/load-check-alarms", loadCheckAlarmsHandler)
-	http.HandleFunc("js/metricsChart.js", metricsChartHandler)
+	http.HandleFunc("/js/metricsChart.js", metricsChartHandler)
 
 	log.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -321,7 +321,7 @@ func main() {
 }
 
 func metricsChartHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "resources/metricsChart.js")
+	http.ServeFile(w, r, "resources/js/metricsChart.js")
 }
 
 func loadListTagsHandler(w http.ResponseWriter, r *http.Request) {

@@ -20,16 +20,17 @@
         <button hx-get="/load-metrics-section" hx-target="#content-section" hx-swap="innerHTML">Metrics</button>
         <button hx-get="/load-check-alarms" hx-target="#content-section" hx-swap="innerHTML">Alarms</button>
     </div>
+    <p></p>
     <div class="container">
         <!-- Dynamic Content Section -->
         <div id="content-section">
             <!-- This is where the sections will be dynamically loaded -->
         </div>
-            <!-- Chart Content
+            <!-- Chart Content -->
     <div id="chart-section" class="chart-container">
         <canvas id="metricsChart"></canvas>
-        <div hx-get="js/metricsChart.js" hx-trigger="load" hx-swap="outerHTML"></div>
-    </div> -->
+        <!-- <div hx-get="resources/js/metricsChart.js" hx-trigger="load" hx-swap="outerHTML"></div> -->
+    </div>
     </div>
 
 </body>
