@@ -1,5 +1,5 @@
 # VTRGo
-VTRGo is an application written in Go for collecting and displaying data from ControlLogix PLC's.
+VTRGo is an application written in Go for collecting data from ControlLogix PLC's and for displaying the data, sending the data to excel, or sending reports via email.
 
 ### Features
 - Read and write tags to a ControlLogix PLC
