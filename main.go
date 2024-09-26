@@ -30,6 +30,9 @@ type MetricsData struct {
 
 func main() {
 
+	// robot := bot.NewRaspiRobot()
+	// robot.Start()
+
 	// create.L5XCreate()
 	// db.Work()
 
