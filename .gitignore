@@ -6,6 +6,7 @@
 *.xlsx
 *.db
 *db.sqlite3*
+vtrgo
 
 # Test binary, built with `go test -c`
 *.test
