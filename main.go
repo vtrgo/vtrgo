@@ -34,7 +34,7 @@ func main() {
 	// robot.Start()
 
 	// create.L5XCreate()
-	// db.Work()
+	db.Work()
 
 	// config, err := email.LoadConfig()
 	// if err != nil {
@@ -262,18 +262,18 @@ func main() {
 	})
 
 	// System data
-	date := time.Now().Format("2006-01-02")
+	// date := time.Now().Format("2006-01-02")
 	interval := 300 * time.Millisecond
 
 	// Configurable tags TODO: Add a database for user configurable tags
 	customerName := "Halkey"
 	recipeTag := "HMI_Recipe[0].RecipeName"
 
-	dataTriggerTag := "Program:HMI_Executive_Control.DataTrigger"
-	dataResponseTag := "Program:HMI_Executive_Control.DataResponse"
+	dataTriggerTag := "DataTrigger"
+	dataResponseTag := "DataResponse"
 
-	alarmTrigger := "Program:HMI_Executive_Control.AlarmTrigger"
-	alarmResponse := "Program:HMI_Executive_Control.AlarmResponse"
+	alarmTriggerTag := "AlarmTrigger"
+	alarmResponseTag := "AlarmResponse"
 
 	recipeName, err := plc.ReadTagString(recipeTag)
 	if err != nil {
@@ -281,11 +281,11 @@ func main() {
 		return
 	}
 
-	dataFilePath := fmt.Sprintf("output_files/%s_%s-Data_%s.xlsx", customerName, recipeName, date)
-	alarmFilePath := fmt.Sprintf("output_files/%s_%s-Alarms_%s.xlsx", customerName, recipeName, date)
+	dataFilePath := fmt.Sprintf("output_files/%s_%s-Data_%s.xlsx", customerName, recipeName, (time.Now().Format("2006-01-02")))
+	alarmFilePath := fmt.Sprintf("output_files/%s_%s-Alarms_", customerName, recipeName)
 
 	dataTriggerChecker(dataTagsDb, plc, dataTriggerTag, dataResponseTag, dataFilePath, interval)
-	alarmTriggerRoutine(alarmTagsDb, plc, alarmTrigger, alarmResponse, alarmFilePath, interval)
+	alarmTriggerRoutine(alarmTagsDb, plc, alarmTriggerTag, alarmResponseTag, alarmFilePath, interval)
 	// Sets up endpoint handlers for each function call
 	http.Handle("/", http.FileServer(http.Dir(".")))
 

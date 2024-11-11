@@ -90,7 +90,9 @@ func alarmTriggerRoutine(tagdb *sql.DB, plc *plc.PLC, triggerTag string, respons
 				if len(plcTags) > 0 {
 					// Pass the tags to be written to Excel
 					log.Printf("plcTags: %v", plcTags)
-					err = excel.WriteAlarmsToExcel(excel.AlarmTags{AlarmTags: plcTags}, filePath)
+					alarmFilePath := filePath + time.Now().Format("2006-01-02.xlsx")
+
+					err = excel.WriteAlarmsToExcel(excel.AlarmTags{AlarmTags: plcTags}, alarmFilePath)
 					if err != nil {
 						log.Printf("Failed to write to Excel: %v", err)
 					}

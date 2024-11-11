@@ -28,6 +28,7 @@ func WriteAlarmsToExcel(data AlarmTags, filePath string) error {
 	if _, err = os.Stat(filePath); os.IsNotExist(err) {
 		// Create a new Excel file if it doesn't exist
 		file = excelize.NewFile()
+		log.Println("File created")
 		// Create a new sheet
 		index, _ := file.NewSheet("Sheet1")
 		// Set the value of headers
