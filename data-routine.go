@@ -44,7 +44,7 @@ func dataTriggerChecker(dataTagsDb *sql.DB, plc *plc.PLC, triggerTag string, res
 
 				// log.Println("Email sent successfully!")
 
-				log.Println("Trigger activated, writing data to Excel")
+				log.Println("Data trigger activated, writing data to Excel")
 
 				tags, err := db.FetchTags(dataTagsDb, "dataTags")
 				if err != nil {

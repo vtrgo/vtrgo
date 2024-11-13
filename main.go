@@ -34,7 +34,7 @@ func main() {
 	// robot.Start()
 
 	// create.L5XCreate()
-	db.Work()
+	// db.Work()
 
 	// config, err := email.LoadConfig()
 	// if err != nil {
