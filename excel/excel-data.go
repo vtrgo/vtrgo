@@ -19,6 +19,16 @@ type PlcTags struct {
 	Tags []Tag
 }
 
+func excelColumnName(index int) string {
+	name := ""
+	for index > 0 {
+		index-- // Adjust for zero-based index
+		name = string('A'+(index%26)) + name
+		index /= 26
+	}
+	return name
+}
+
 func WriteDataToExcel(data PlcTags, filePath string) error {
 	var file *excelize.File
 	var err error
@@ -26,35 +36,32 @@ func WriteDataToExcel(data PlcTags, filePath string) error {
 	if _, err = os.Stat(filePath); os.IsNotExist(err) {
 		// Create a new Excel file if it doesn't exist
 		file = excelize.NewFile()
-		// Create a new sheet
 		index, _ := file.NewSheet("Sheet1")
-		// Set the value of headers
 		file.SetCellValue("Sheet1", "A1", "Timestamp")
+
 		colIndex := 1
 		for _, tag := range data.Tags {
 			switch v := tag.Value.(type) {
 			case []int32:
 				for i := range v {
-					col := string(rune('A' + colIndex))
+					col := excelColumnName(colIndex)
 					file.SetCellValue("Sheet1", fmt.Sprintf("%s1", col), fmt.Sprintf("%s[%d]", tag.Name, i))
 					colIndex++
 				}
 			case []float32:
 				for i := range v {
-					col := string(rune('A' + colIndex))
+					col := excelColumnName(colIndex)
 					file.SetCellValue("Sheet1", fmt.Sprintf("%s1", col), fmt.Sprintf("%s[%d]", tag.Name, i))
 					colIndex++
 				}
-
 			default:
-				col := string(rune('A' + colIndex))
+				col := excelColumnName(colIndex)
 				file.SetCellValue("Sheet1", fmt.Sprintf("%s1", col), tag.Name)
 				colIndex++
 			}
 		}
 		file.SetActiveSheet(index)
 	} else {
-		// Open the existing Excel file
 		file, err = excelize.OpenFile(filePath)
 		if err != nil {
 			return err
@@ -76,30 +83,30 @@ func WriteDataToExcel(data PlcTags, filePath string) error {
 		switch v := tag.Value.(type) {
 		case []int:
 			for _, val := range v {
-				col := string(rune('A' + colIndex))
+				col := excelColumnName(colIndex)
 				file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", col, nextRow), val)
 				colIndex++
 			}
 		case []int32:
 			for _, val := range v {
-				col := string(rune('A' + colIndex))
+				col := excelColumnName(colIndex)
 				file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", col, nextRow), val)
 				colIndex++
 			}
 		case []float32:
 			for _, val := range v {
-				col := string(rune('A' + colIndex))
+				col := excelColumnName(colIndex)
 				file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", col, nextRow), val)
 				colIndex++
 			}
 		case []float64:
 			for _, val := range v {
-				col := string(rune('A' + colIndex))
+				col := excelColumnName(colIndex)
 				file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", col, nextRow), val)
 				colIndex++
 			}
 		default:
-			col := string(rune('A' + colIndex))
+			col := excelColumnName(colIndex)
 			file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", col, nextRow), tag.Value)
 			colIndex++
 		}

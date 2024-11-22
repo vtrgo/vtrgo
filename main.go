@@ -40,10 +40,10 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal("Error loading config:", err)
 	// }
-	// recipient := "justin@vtrfeedersolutions.com"
+	// recipient := "yourname@emailaddress.com"
 	// subject := "This is an automated message from vtrgo."
 	// message := "Please find your data report attached."
-	// attachment := "output_files/Halkey_43BK-730-Data_2024-06-10.xlsx"
+	// attachment := "output_files/Data_2024-06-10.xlsx"
 
 	// err = email.SendEmail(config, recipient, subject, message, attachment, true)
 	// if err != nil {
@@ -65,7 +65,7 @@ func main() {
 	// }
 
 	// Test a command line introduction to the user
-	welcome("Justin")
+	welcome("User")
 
 	// Declare a PLC tag as a test integer variable
 	myTag := db.PlcTag{
