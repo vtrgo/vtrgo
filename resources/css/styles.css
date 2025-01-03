@@ -8,6 +8,7 @@
 /* Body and Typography */
 body {
     font-family: 'Arial', sans-serif;
+    /* font-family: 'Nova Square', sans-serif; */
     line-height: 1.6;
     color: #333;
     background-color: #f4f4f4;
@@ -112,6 +113,12 @@ code {
     font-size: 0.9em;
 }
 
+.nova-square-regular {
+    font-family: "Nova Square", serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
 /* Container Layout */
 .container {
     display: flex;
