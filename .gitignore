@@ -18,6 +18,7 @@ vtrgo
 /env/
 /resources/
 /output_files/
+/temp/
 
 # Go workspace file
 *.work
