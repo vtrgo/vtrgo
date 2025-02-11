@@ -146,7 +146,7 @@ func FetchDescription(db *sql.DB, alarmTag string) (string, error) {
 
 func Work() {
 
-	xmlFile, err := os.Open("resources/22-045 Halkey FTAlarms for VSCode.xml")
+	xmlFile, err := os.Open("resources/AlarmDescriptions.xml")
 	if err != nil {
 		fmt.Println("Error opening XML file:", err)
 		return
@@ -172,13 +172,13 @@ func Work() {
 		return
 	}
 
-	// err = InsertAlarms(db, alarms)
-	// if err != nil {
-	// 	fmt.Println("Error inserting alarms into database:", err)
-	// 	return
-	// }
+	err = InsertAlarms(db, alarms)
+	if err != nil {
+		fmt.Println("Error inserting alarms into database:", err)
+		return
+	}
 
-	// fmt.Println("Alarms inserted successfully")
+	fmt.Println("Alarms inserted successfully")
 
 	err = listAlarms(db)
 	if err != nil {
