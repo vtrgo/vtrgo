@@ -69,17 +69,18 @@ func main() {
 
 	// Declare a PLC tag as a test integer variable
 	myTag := db.PlcTag{
-		Name: "Program:HMI_Executive_Control.TestDint",
+		Name: "TestDint",
 		Type: "dint",
 	}
 
 	myDintArray := db.PlcTag{
-		Name:   "Program:HMI_Executive_Control.RealData",
+		Name:   "TestReal",
 		Type:   "[]real",
 		Length: 10,
 	}
 	// Create a new PLC identity using the IP address of the Logix controller
-	plc := plc.NewPLC("10.103.115.10")
+	// plc := plc.NewPLC("10.103.115.10")
+	plc := plc.NewPLC("192.168.1.10")
 
 	// Make a connection to the PLC
 	err := plc.Connect()
