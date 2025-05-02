@@ -16,7 +16,6 @@ vtrgo
 
 # Dependency directories (remove the comment below to include it)
 /env/
-/resources/
 /output_files/
 /temp/
 

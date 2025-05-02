@@ -69,12 +69,12 @@ func main() {
 
 	// Declare a PLC tag as a test integer variable
 	myTag := db.PlcTag{
-		Name: "TestDint",
+		Name: "TestDINT",
 		Type: "dint",
 	}
 
 	myDintArray := db.PlcTag{
-		Name:   "TestReal",
+		Name:   "ArrayREAL",
 		Type:   "[]real",
 		Length: 10,
 	}
@@ -232,10 +232,10 @@ func main() {
 
 	http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("resources"))))
 
-	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	tmpl := template.Must(template.ParseFiles("index.html"))
-	// 	tmpl.Execute(w, nil)
-	// })
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tmpl := template.Must(template.ParseFiles("templates/index.html"))
+		tmpl.Execute(w, nil)
+	})
 
 	http.HandleFunc("/load-data-tags-section", func(w http.ResponseWriter, r *http.Request) {
 		tmpl := template.Must(template.ParseFiles("templates/data-tags-section.html"))
@@ -266,9 +266,10 @@ func main() {
 	// date := time.Now().Format("2006-01-02")
 	interval := 300 * time.Millisecond
 
-	// Configurable tags TODO: Add a database for user configurable tags
+	// Configurable tags
+	//  TODO: Add a database for user configurable tags
 	customerName := "Halkey"
-	recipeTag := "HMI_Recipe[0].RecipeName"
+	recipeTag := "RecipeName"
 
 	dataTriggerTag := "DataTrigger"
 	dataResponseTag := "DataResponse"
@@ -288,7 +289,7 @@ func main() {
 	dataTriggerChecker(dataTagsDb, plc, dataTriggerTag, dataResponseTag, dataFilePath, interval)
 	alarmTriggerRoutine(alarmTagsDb, plc, alarmTriggerTag, alarmResponseTag, alarmFilePath, interval)
 	// Sets up endpoint handlers for each function call
-	http.Handle("/", http.FileServer(http.Dir(".")))
+	// http.Handle("/", http.FileServer(http.Dir(".")))
 
 	http.HandleFunc("/add-tag", addDataTagHandler)
 	http.HandleFunc("/remove-tag", removeDataTagHandler)
@@ -318,8 +319,8 @@ func main() {
 	http.HandleFunc("/load-check-alarms", loadCheckAlarmsHandler)
 	http.HandleFunc("/js/metricsChart.js", metricsChartHandler)
 
-	log.Println("Server started at :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Println("Server started at :8088")
+	log.Fatal(http.ListenAndServe(":8088", nil))
 	// create.L5XCreate()
 
 }

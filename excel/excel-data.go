@@ -23,7 +23,7 @@ func excelColumnName(index int) string {
 	name := ""
 	for index > 0 {
 		index-- // Adjust for zero-based index
-		name = string('A'+(index%26)) + name
+		name = string(rune('A'+(index%26))) + name
 		index /= 26
 	}
 	return name

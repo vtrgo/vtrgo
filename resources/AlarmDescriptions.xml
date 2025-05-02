@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<alarms>
+  <triggers>
+    <trigger id="T1" type="value" ack-all-value="0" use-ack-all="false" ack-tag="" exp="{[PLC]Faults[0].0}" message-tag="" message-handshake-exp="" message-notification-tag="" remote-ack-exp="" remote-ack-handshake-tag="" label="Faults[0].0" handshake-tag="" />
+  </triggers>
+  <messages>
+    <message id="M1" trigger-value="1" identifier="4" trigger="#T1" backcolor="#800000" forecolor="#FFFFFF" audio="false" display="true" print="false" message-to-tag="false" text="Feeder Faulted" />
+  </messages>
+  <alarm capacity-overrun-tag="" remote-clear-history-exp=""></alarm>
+</alarms>
