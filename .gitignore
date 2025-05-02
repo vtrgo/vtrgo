@@ -16,7 +16,7 @@ vtrgo
 
 # Dependency directories (remove the comment below to include it)
 /env/
-/output_files/
+# /output_files/
 /temp/
 
 # Go workspace file
