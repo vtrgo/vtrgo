@@ -8,13 +8,14 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
 	"vtrgo/db"
-	"vtrgo/excel"
 	"vtrgo/plc"
 
+	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -29,6 +30,15 @@ type MetricsData struct {
 
 func main() {
 
+	err := godotenv.Load("env/.env")
+	if err != nil {
+		log.Println("No .env file found or error loading .env")
+	}
+
+	influxURL := os.Getenv("INFLUXDB_URL")
+	influxToken := os.Getenv("INFLUXDB_TOKEN")
+	influxOrg := os.Getenv("INFLUXDB_ORG")
+	influxBucket := os.Getenv("INFLUXDB_BUCKET")
 	// robot := bot.NewRaspiRobot()
 	// robot.Start()
 
@@ -82,7 +92,7 @@ func main() {
 	plc := plc.NewPLC("192.168.1.10")
 
 	// Make a connection to the PLC
-	err := plc.Connect()
+	err = plc.Connect()
 	if err != nil {
 		log.Printf("Error connecting to PLC: %v", err)
 		return
@@ -198,18 +208,29 @@ func main() {
 		htmlResponse := fmt.Sprintf("<p>%s: <span id=\"tagValue\">%d</span></p>", myTag.Name, myTag.Value)
 		write.Header().Set("Content-Type", "text/html")
 		write.Write([]byte(htmlResponse))
+	})
 
-		plcData := excel.PlcTags{
-			Tags: []excel.Tag{
-				{Name: myTag.Name, Value: myTag.Value.(int32)},
-			},
-		}
+	// Creates the /add-one endpoint to increment the test integer value and update it in the PLC
+	http.HandleFunc("/add-one", func(write http.ResponseWriter, read *http.Request) {
+		myTag.Value = myTag.Value.(int32) + 1
+		plc.WriteTag(myTag.Name, myTag.Type, myTag.Value)
+		log.Printf("Tag value updated: %v", myTag.Value)
 
-		err = excel.WriteDataToExcel(plcData, "output_files/plc_data.xlsx")
-		if err != nil {
-			log.Printf("Failed to write to Excel: %v", err)
-			http.Error(write, "Failed to write to Excel", http.StatusInternalServerError)
-		}
+		htmlResponse := fmt.Sprintf("<p>%s: <span id=\"tagValue\">%d</span></p>", myTag.Name, myTag.Value)
+		write.Header().Set("Content-Type", "text/html")
+		write.Write([]byte(htmlResponse))
+
+	})
+
+	// Creates the /update endpoint to increment the test integer value and store the new value in excel
+	http.HandleFunc("/subtract-one", func(write http.ResponseWriter, read *http.Request) {
+		myTag.Value = myTag.Value.(int32) - 1
+		plc.WriteTag(myTag.Name, myTag.Type, myTag.Value)
+		log.Printf("Tag value updated: %v", myTag.Value)
+
+		htmlResponse := fmt.Sprintf("<p>%s: <span id=\"tagValue\">%d</span></p>", myTag.Name, myTag.Value)
+		write.Header().Set("Content-Type", "text/html")
+		write.Write([]byte(htmlResponse))
 	})
 
 	// Creates the /update endpoint to increment the test integer value and store the new value in excel
@@ -267,7 +288,12 @@ func main() {
 
 	// Configurable tags
 	//  TODO: Add a database for user configurable tags
-	customerName := "Halkey"
+	customerName, err := db.FetchConfigTag(configTagsDb, "customerName")
+	if err != nil {
+		log.Printf("Error reading customerName from config: %v", err)
+		return
+	}
+
 	recipeTag := "RecipeName"
 
 	dataTriggerTag := "DataTrigger"
@@ -285,7 +311,32 @@ func main() {
 	dataFilePath := fmt.Sprintf("output_files/%s_%s-Data_%s.xlsx", customerName, recipeName, (time.Now().Format("2006-01-02")))
 	alarmFilePath := fmt.Sprintf("output_files/%s_%s-Alarms_", customerName, recipeName)
 
-	dataTriggerChecker(dataTagsDb, plc, dataTriggerTag, dataResponseTag, dataFilePath, interval)
+	// Read configUseInflux from /env/vtrgo-config.json
+	configFile, err := os.Open("env/vtrgo-config.json")
+	if err != nil {
+		log.Printf("Error opening config file: %v", err)
+		return
+	}
+	defer configFile.Close()
+
+	var config struct {
+		ConfigUseInflux bool `json:"UseInflux"`
+	}
+	if err := json.NewDecoder(configFile).Decode(&config); err != nil {
+		log.Printf("Error decoding config file: %v", err)
+		return
+	}
+	configUseInflux := config.ConfigUseInflux
+
+	var influxDb *db.InfluxDBClient
+	if configUseInflux {
+		influxDb = db.NewInfluxDBClient(influxURL, influxToken, influxOrg, influxBucket)
+	} else {
+		influxDb = nil
+	}
+	log.Printf("InfluxDB URL: %s", influxURL)
+	log.Printf("configUseInflux: %v", configUseInflux)
+	dataTriggerChecker(dataTagsDb, plc, dataTriggerTag, dataResponseTag, dataFilePath, interval, influxDb, configUseInflux)
 	alarmTriggerRoutine(alarmTagsDb, plc, alarmTriggerTag, alarmResponseTag, alarmFilePath, interval)
 	// Sets up endpoint handlers for each function call
 	// http.Handle("/", http.FileServer(http.Dir(".")))
