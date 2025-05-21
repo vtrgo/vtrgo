@@ -20,7 +20,6 @@ import (
 )
 
 var dataTagsDb *sql.DB
-var configTagsDb *sql.DB
 var alarmTagsDb *sql.DB
 var usersDb *sql.DB
 
@@ -74,7 +73,7 @@ func main() {
 	// }
 
 	// Test a command line introduction to the user
-	welcome("User")
+	welcome("Justin")
 
 	// Declare a PLC tag as a test integer variable
 	myTag := db.PlcTag{
@@ -167,19 +166,6 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	// Create a connection to the plc_tags database
-	configTagsDb, err = sql.Open("sqlite3", "./db_config.db")
-	if err != nil {
-		log.Fatalf("Failed to open database: %v", err)
-	}
-	defer dataTagsDb.Close()
-
-	// Initialize and create the database if it does not already exist
-	err = db.InitConfigDB(configTagsDb)
-	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
-	}
-
 	// Create a connection to the generic tags database, passing the db and table names
 	alarmTagsDb, err = sql.Open("sqlite3", "./db_tags.db")
 	if err != nil {
@@ -205,13 +191,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-
-	testConfigTag, err := db.FetchConfigTag(configTagsDb, "testConfigTag")
-	if err != nil {
-		log.Printf("Error reading tag: %v", err)
-		return
-	}
-	log.Printf("testConfigTag: %s", testConfigTag)
 
 	// Creates the /metrics endpoint to display and update tag values in the browser
 	http.HandleFunc("/metrics", func(write http.ResponseWriter, read *http.Request) {
@@ -308,14 +287,7 @@ func main() {
 	// date := time.Now().Format("2006-01-02")
 	interval := 300 * time.Millisecond
 
-	// Configurable tags
-	//  TODO: Add a database for user configurable tags
-	customerName, err := db.FetchConfigTag(configTagsDb, "customerName")
-	if err != nil {
-		log.Printf("Error reading customerName from config: %v", err)
-		return
-	}
-
+	customerName := "VTR"
 	recipeTag := "RecipeName"
 
 	dataTriggerTag := "DataTrigger"
@@ -349,18 +321,12 @@ func main() {
 	http.HandleFunc("/add-tag", addDataTagHandler)
 	http.HandleFunc("/remove-tag", removeDataTagHandler)
 	http.HandleFunc("/list-tags", listDataTagsHandler)
-	http.HandleFunc("/add-config-tag", addConfigTagHandler)
-	http.HandleFunc("/remove-config-tag", removeConfigTagHandler)
-	http.HandleFunc("/list-config-tags", listConfigTagsHandler)
 	http.HandleFunc("/add-alarm-tag", addAlarmTagHandler)
 	http.HandleFunc("/remove-alarm-tag", removeAlarmTagHandler)
 	http.HandleFunc("/list-alarm-tags", listAlarmTagsHandler)
 	http.HandleFunc("/load-list-tags", loadListTagsHandler)
 	http.HandleFunc("/load-add-tags", loadAddTagsHandler)
 	http.HandleFunc("/load-remove-tags", loadRemoveTagsHandler)
-	http.HandleFunc("/load-list-config-tags", loadListConfigTagsHandler)
-	http.HandleFunc("/load-add-config-tags", loadAddConfigTagsHandler)
-	http.HandleFunc("/load-remove-config-tags", loadRemoveConfigTagsHandler)
 	http.HandleFunc("/load-list-alarm-tags", loadListAlarmTagsHandler)
 	http.HandleFunc("/load-add-alarm-tags", loadAddAlarmTagsHandler)
 	http.HandleFunc("/load-remove-alarm-tags", loadRemoveAlarmTagsHandler)
@@ -394,18 +360,6 @@ func loadAddTagsHandler(w http.ResponseWriter, r *http.Request) {
 
 func loadRemoveTagsHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "templates/remove-tags.html")
-}
-
-func loadListConfigTagsHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "templates/list-config-tags.html")
-}
-
-func loadAddConfigTagsHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "templates/add-config-tags.html")
-}
-
-func loadRemoveConfigTagsHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "templates/remove-config-tags.html")
 }
 
 func loadListAlarmTagsHandler(w http.ResponseWriter, r *http.Request) {
@@ -493,66 +447,6 @@ func removeDataTagHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fmt.Fprintf(w, "Tag '%s' removed successfully!", tag)
-	} else {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-	}
-}
-
-// Handles the /list-tags endpoint for displaying all the tags stored in the plc_tags database
-func listConfigTagsHandler(w http.ResponseWriter, r *http.Request) {
-	tags, err := db.FetchConfigVariables(configTagsDb)
-	if err != nil {
-		log.Printf("Failed to fetch config tags: %v", err)
-		http.Error(w, "Failed to fetch config tags", http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, "<ul>")
-	for _, tag := range tags {
-		fmt.Fprintf(w, "<li>%s: %s</li>", tag.Name, tag.Value)
-	}
-	fmt.Fprintf(w, "</ul>")
-}
-
-// Handles the /add-tag endpoint for adding new tags to the plc_tags database
-func addConfigTagHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		name := r.FormValue("name")
-		value := r.FormValue("value")
-		if name == "" || value == "" {
-			http.Error(w, "Config name and value are required", http.StatusBadRequest)
-			return
-		}
-
-		err := db.InsertConfigVariable(configTagsDb, name, value)
-		if err != nil {
-			log.Printf("Failed to insert config tag: %v", err)
-			http.Error(w, "Failed to insert config tag", http.StatusInternalServerError)
-			return
-		}
-
-		fmt.Fprintf(w, "Config '%s' with value '%s' added successfully!", name, value)
-	} else {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-	}
-}
-
-// Handles the /remove-tag endpoint for deleting tags from the plc_tags database
-func removeConfigTagHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		name := r.FormValue("name")
-		if name == "" {
-			http.Error(w, "Config name required", http.StatusBadRequest)
-			return
-		}
-
-		err := db.RemoveConfigVariable(configTagsDb, name)
-		if err != nil {
-			log.Printf("Failed to remove config tag: %v", err)
-			http.Error(w, "Failed to delete config tag", http.StatusInternalServerError)
-			return
-		}
-		fmt.Fprintf(w, "Config '%s' removed successfully!", name)
 	} else {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 	}
