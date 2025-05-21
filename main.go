@@ -73,7 +73,7 @@ func main() {
 	// }
 
 	// Test a command line introduction to the user
-	welcome("Justin")
+	welcome("User")
 
 	// Declare a PLC tag as a test integer variable
 	myTag := db.PlcTag{
