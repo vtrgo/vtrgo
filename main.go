@@ -87,9 +87,31 @@ func main() {
 		Type:   "[]real",
 		Length: 10,
 	}
+	// Read PlcIpAddress and UseInflux from /env/vtrgo-config.json
+	configFile, err := os.Open("env/vtrgo-config.json")
+	if err != nil {
+		log.Printf("Error opening config file: %v", err)
+		return
+	}
+	defer configFile.Close()
+
+	var config struct {
+		PlcIpAddress    string `json:"PlcIpAddress"`
+		ConfigUseInflux bool   `json:"UseInflux"`
+	}
+	if err := json.NewDecoder(configFile).Decode(&config); err != nil {
+		log.Printf("Error decoding config file: %v", err)
+		return
+	}
+	plcIpAddress := config.PlcIpAddress
+	if plcIpAddress == "" {
+		log.Printf("PlcIpAddress not found in config file")
+		return
+	}
+	configUseInflux := config.ConfigUseInflux
+
 	// Create a new PLC identity using the IP address of the Logix controller
-	// plc := plc.NewPLC("10.103.115.10")
-	plc := plc.NewPLC("192.168.1.10")
+	plc := plc.NewPLC(plcIpAddress)
 
 	// Make a connection to the PLC
 	err = plc.Connect()
@@ -310,23 +332,6 @@ func main() {
 
 	dataFilePath := fmt.Sprintf("output_files/%s_%s-Data_%s.xlsx", customerName, recipeName, (time.Now().Format("2006-01-02")))
 	alarmFilePath := fmt.Sprintf("output_files/%s_%s-Alarms_", customerName, recipeName)
-
-	// Read configUseInflux from /env/vtrgo-config.json
-	configFile, err := os.Open("env/vtrgo-config.json")
-	if err != nil {
-		log.Printf("Error opening config file: %v", err)
-		return
-	}
-	defer configFile.Close()
-
-	var config struct {
-		ConfigUseInflux bool `json:"UseInflux"`
-	}
-	if err := json.NewDecoder(configFile).Decode(&config); err != nil {
-		log.Printf("Error decoding config file: %v", err)
-		return
-	}
-	configUseInflux := config.ConfigUseInflux
 
 	var influxDb *db.InfluxDBClient
 	if configUseInflux {
